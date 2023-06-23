@@ -30,3 +30,28 @@
 *.exe
 *.out
 *.app
+
+# Makefiles and linkers
+*.ld
+*.mk
+*/makefile
+
+# Output files
+*.mem
+*.map
+*.hex
+*.lst
+*.elf
+*/obj/*
+
+# Project files
+*/.cproject
+*/.project
+*/.settings/*
+*/.template
+*.launch
+*.wvproj
+
+# Startup files
+*.s
+*.S
