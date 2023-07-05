@@ -83,16 +83,16 @@ void huansic_Initialize(void) {
 	GPIO_PinRemapConfig(encodermap, ENABLE);
 
 	// initialize edgeboard interface
-	huansic_Edgeboard_Init();
+	huansic_Edgeboard_Init(&edgeboard);
 
 	// initialize motor
-	huansic_Motor_Init();
+	huansic_Motor_Init(&motor);
 
 	// initialize servo
-	huansic_Servo_Init();
+	huansic_Servo_Init(&servo);
 
 	// initialize encoder
-	huansic_Encoder_Init();
+	huansic_Encoder_Init(&encoder);
 
 	// initialize the LEDs
 	huansic_LED_Init();
@@ -161,7 +161,7 @@ void huansic_Clocks_Init(void) {
 	RCC->APB2PCENR = rcc_apb2pcenr;
 }
 
-void huansic_Edgeboard_Init(void) {
+void huansic_Edgeboard_Init(Edge_TypeDef *edgeboard) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 	USART_InitTypeDef USART_InitStructure = { 0 };
 	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
