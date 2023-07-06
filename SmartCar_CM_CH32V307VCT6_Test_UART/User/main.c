@@ -45,6 +45,7 @@ int main(void)
 //	printf("SystemClk:%d\r\n",SystemCoreClock);
 //	printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
 //	printf("This is printf example\r\n");
+	huansic_Initialize();
 	while(1) {
 
 	}

@@ -43,6 +43,6 @@ void HardFault_Handler(void) {
 void TIM9_UP_IRQHandler(void) {
 	HUANSIC_TIM9_UPDATE_COUNTER++;
 	if (HUANSIC_TIM9_UPDATE_COUNTER % 5 == 0) {	// every fifth one triggers (10Hz)
-		huansic_Motor_PID();
+		huansic_Motor_PID_IRQ();
 	}
 }

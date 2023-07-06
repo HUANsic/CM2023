@@ -8,7 +8,7 @@
 #ifndef USER_HUANSIC_UTIL_H_
 #define USER_HUANSIC_UTIL_H_
 
-#include <huansic_types.h>
+#include "huansic_types.h"
 
 #define HUAN_DefaultMapping 0xFFFFFFFF
 #define HUAN_NoMapping 0x00
@@ -101,7 +101,5 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder);
  *            GPIO_FullRemap_USART8 - USART8 Full Alternate Function mapping
  *            GPIO_Remap_USART1_HighBit - USART1 Alternate Function mapping high bit
  */
-
-void huansic_Delay_Init(void);
 
 #endif /* USER_HUANSIC_UTIL_H_ */
