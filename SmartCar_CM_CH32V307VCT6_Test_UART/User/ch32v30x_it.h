@@ -14,8 +14,6 @@
 
 #include "debug.h"
 
-#include "huansic_FullFunction_lib.h"
-
 
 #endif /* __CH32V30x_IT_H */
 

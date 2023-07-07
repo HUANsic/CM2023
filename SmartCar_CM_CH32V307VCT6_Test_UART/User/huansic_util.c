@@ -467,6 +467,25 @@ uint32_t huansic_findRemap_motor(Motor_TypeDef *motor) {
 			Delay_Ms(1000);
 		}
 	}
+	// find channelN
+	switch (motor->channelN) {
+	case TIM_Channel_1:
+		channelN = 1;
+		break;
+	case TIM_Channel_2:
+		channelN = 2;
+		break;
+	case TIM_Channel_3:
+		channelN = 3;
+		break;
+	case TIM_Channel_4:
+		channelN = 4;
+		break;
+	default:
+		while(1) {
+			Delay_Ms(1000);
+		}
+	}
 	// find portP
 	if (motor->portP == GPIOA) {
 		portpinP = PAx;
@@ -975,4 +994,127 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder) {
 	}
 
 	return HUAN_NoMapping;
+}
+
+uint32_t huansic_getAPB2_fromGPIO(GPIO_TypeDef *gpio) {
+	if (gpio == GPIOA)
+		return RCC_APB2Periph_GPIOA;
+	else if (gpio == GPIOB)
+		return RCC_APB2Periph_GPIOB;
+	else if (gpio == GPIOC)
+		return RCC_APB2Periph_GPIOC;
+	else if (gpio == GPIOD)
+		return RCC_APB2Periph_GPIOD;
+	else if (gpio == GPIOE)
+		return RCC_APB2Periph_GPIOE;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB1_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM2)
+		return RCC_APB1Periph_TIM2;
+	else if (tim == TIM3)
+		return RCC_APB1Periph_TIM3;
+	else if (tim == TIM4)
+		return RCC_APB1Periph_TIM4;
+	else if (tim == TIM5)
+		return RCC_APB1Periph_TIM5;
+	else if (tim == TIM6)
+		return RCC_APB1Periph_TIM6;
+	else if (tim == TIM7)
+		return RCC_APB1Periph_TIM7;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB2_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM1)
+		return RCC_APB2Periph_TIM1;
+	else if (tim == TIM8)
+		return RCC_APB2Periph_TIM8;
+	else if (tim == TIM9)
+		return RCC_APB2Periph_TIM9;
+	else if (tim == TIM10)
+		return RCC_APB2Periph_TIM10;
+	else
+		return 0;
+}
+
+IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart) {
+	if (usart == USART1)
+		return USART1_IRQn;
+	else if (usart == USART2)
+		return USART2_IRQn;
+	else if (usart == USART3)
+		return USART3_IRQn;
+	else if (usart == UART4)
+		return UART4_IRQn;
+	else if (usart == UART5)
+		return UART5_IRQn;
+	else if (usart == UART6)
+		return UART6_IRQn;
+	else if (usart == UART7)
+		return UART7_IRQn;
+	else if (usart == UART8)
+		return UART8_IRQn;
+	else {
+		while (1) {
+			Delay_Ms(1000);
+		}
+	}
+}
+
+uint32_t huansic_getAPB1_fromUART(USART_TypeDef *usart) {
+	if (usart == USART2)
+		return RCC_APB1Periph_USART2;
+	else if (usart == USART3)
+		return RCC_APB1Periph_USART3;
+	else if (usart == UART4)
+		return RCC_APB1Periph_UART4;
+	else if (usart == UART5)
+		return RCC_APB1Periph_UART5;
+	else if (usart == UART6)
+		return RCC_APB1Periph_UART6;
+	else if (usart == UART7)
+		return RCC_APB1Periph_UART7;
+	else if (usart == UART8)
+		return RCC_APB1Periph_UART8;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB2_fromUART(USART_TypeDef *usart) {
+	if (usart == USART1)
+		return RCC_APB2Periph_USART1;
+	else
+		return 0;
+}
+
+IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM1)
+		return TIM1_UP_IRQn;
+	else if (tim == TIM2)
+		return TIM2_IRQn;
+	else if (tim == TIM3)
+		return TIM3_IRQn;
+	else if (tim == TIM4)
+		return TIM4_IRQn;
+	else if (tim == TIM5)
+		return TIM5_IRQn;
+	else if (tim == TIM6)
+		return TIM6_IRQn;
+	else if (tim == TIM7)
+		return TIM7_IRQn;
+	else if (tim == TIM8)
+		return TIM8_UP_IRQn;
+	else if (tim == TIM9)
+		return TIM9_UP_IRQn;
+	else if (tim == TIM10)
+		return TIM10_UP_IRQn;
+	else {
+		while (1) {
+			Delay_Ms(1000);
+		}
+	}
 }

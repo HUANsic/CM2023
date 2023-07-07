@@ -43,6 +43,19 @@ uint32_t huansic_findRemap_edge(Edge_TypeDef *edge);
 
 uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder);
 
+uint32_t huansic_getAPB2_fromGPIO(GPIO_TypeDef *gpio);
+
+uint32_t huansic_getAPB1_fromTIM(TIM_TypeDef *tim);
+
+uint32_t huansic_getAPB2_fromTIM(TIM_TypeDef *tim);
+
+uint32_t huansic_getAPB1_fromUART(USART_TypeDef *usart);
+
+uint32_t huansic_getAPB2_fromUART(USART_TypeDef *usart);
+
+IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart);
+
+IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim);
 
 /*********************************************************************
  * @fn      GPIO_PinRemapConfig
