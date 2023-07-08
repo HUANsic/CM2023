@@ -20,12 +20,14 @@
 
 #include "huansic_FullFunction_lib.h"
 
+
 /* Global typedef */
 
 /* Global define */
 
 /* Global Variable */
 
+void my_lv_port_init(void);
 
 /*********************************************************************
  * @fn      main
@@ -45,6 +47,7 @@ int main(void)
 //	printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
 //	printf("This is printf example\r\n");
 	huansic_Initialize();
+	my_lv_port_init();
 	while(1) {
 
 	}

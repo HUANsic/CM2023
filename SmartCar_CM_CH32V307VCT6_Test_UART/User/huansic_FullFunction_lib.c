@@ -9,6 +9,7 @@
 
 void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
 void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
+void EXTI5_9_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
 
 const uint16_t EDGE_CMD_RESET_LED = 0x3FF8;
 const uint16_t EDGE_CMD_SET_LED = 0x3FFC;
@@ -663,6 +664,11 @@ void huansic_TouchScreen_IRQ(void) {
 void TIM9_UP_IRQHandler(void) {
 	huansic_Motor_PID_IRQ();
 }
+
 void USART3_IRQHandler(void) {
 	huansic_Edgeboard_IRQ();
+}
+
+void EXTI5_9_IRQHandler(void){
+	huansic_TouchScreen_IRQ();
 }
