@@ -238,3 +238,59 @@ int main(void)
 	}
 }
 
+#define MACRO_USB_SEND_BYTE(x)
+
+void sendCMD_pid(int16_t goal){
+	uint16_t sendVal;
+	goal = (goal < -800) ? -800 : ((goal > 800) ? 800 : goal);
+	goal += 800;
+	sendVal = goal & 0x3F80;
+	sendVal <<= 1;		// shift left one bit
+	sendVal |= 0x8000;	// format MSb
+	sendVal |= goal & 0x007F;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
+
+void sendCMD_motor(int16_t goal){
+	uint16_t sendVal;
+	goal = (goal < -200) ? -200 : ((goal > 200) ? 200 : goal);
+	goal += 800;
+	goal += 0x800;
+	sendVal = goal & 0x3F80;
+	sendVal <<= 1;		// shift left one bit
+	sendVal |= 0x8000;	// format MSb
+	sendVal |= goal & 0x007F;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
+
+void sendCMD_servo(int16_t angle){
+	uint16_t sendVal;
+	angle = (angle < -30) ? -30 : ((angle > 30) ? 30 : angle);
+	angle += 3940;
+	sendVal = angle & 0x3F80;
+	sendVal <<= 1;		// shift left one bit
+	sendVal |= 0x8000;	// format MSb
+	sendVal |= goal & 0x007F;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
+
+void sendCMD_disableMotor(){
+	uint16_t sendVal = 0xFF00;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
+
+void sendCMD_enableMotor(){
+	uint16_t sendVal = 0xFF40;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
+
+void sendCMD_setLED(uint8_t index, uint8_t status){		// 0 <= index <= 3
+	uint16_t sendVal = 0xFF78 | (status ? 0x04 : 0) | index;
+	MACRO_USB_SEND_BYTE(sendVal & 0x00FF);		// send low byte first
+	MACRO_USB_SEND_BYTE((sendVal >> 8) & 0x00FF);	// then send high byte
+}
