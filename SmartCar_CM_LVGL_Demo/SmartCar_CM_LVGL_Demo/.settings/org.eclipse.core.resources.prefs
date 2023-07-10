@@ -1,2 +1,4 @@
 eclipse.preferences.version=1
 encoding//LVGL_GUI/drivers/ILI9341.h=UTF-8
+encoding//LVGL_GUI/lvgl_app/events_init.c=UTF-8
+encoding//LVGL_GUI/lvgl_app/guider_fonts/lv_font_Alatsi_Regular_14.c=UTF-8
