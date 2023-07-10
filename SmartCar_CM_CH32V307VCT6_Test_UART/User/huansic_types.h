@@ -44,7 +44,7 @@ typedef struct {
 	TIM_TypeDef *counter;
 	GPIO_TypeDef *Aport, *Bport;
 	uint16_t Apin, Bpin;
-	uint32_t overflow;
+	float overflow;
 } Encoder_TypeDef;
 
 typedef struct {
@@ -55,9 +55,9 @@ typedef struct {
 typedef struct {
 	TIM_TypeDef *timer;
 	float kp, ki, kd, dt;
-	float goal;
-	float input;
-	float error, lastError, dError, sError;
+	float goal, lastSpeed, last5Speed;
+	float error, lastError, sError;
+	float lastTick;
 	uint8_t enabled;
 } PID_TypeDef;
 
