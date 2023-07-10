@@ -50,10 +50,9 @@ int main(void)
 	huansic_Initialize();
 	huansic_Motor_Set(&motor, 0);
 
-	huansic_Edgeboard_SendString(&edgeboard, "1:", 2);
 	huansic_Motor_PID_SetGoal(&pid_controller, 0);
-	Delay_Ms(3000);
-	huansic_Motor_PID_SetGoal(&pid_controller, 1200);
+//	Delay_Ms(3000);
+//	huansic_Motor_PID_SetGoal(&pid_controller, 1200);
 
 	huansic_Motor_Enable(&motor);
 	huansic_Servo_Set(&servo, 0);
@@ -62,7 +61,7 @@ int main(void)
 	uint16_t temp1 = 0, temp2 = 0;
 	int16_t diff;
 	char tempch[20];
-//	uint8_t j = 0;
+	uint8_t j = 0;
 	while(1) {
 		/*
 		 for(; i < 40; i++) {
@@ -82,10 +81,10 @@ int main(void)
 		diff -= temp2;
 		temp2 = temp1;
 		i = sprintf(tempch, "1:%d\n", diff);
-		huansic_Edgeboard_SendString(&edgeboard, tempch, i);
-		Delay_Ms(10);
-//		huansic_LED_Set(&led1, (i = !i));
-//		Delay_Ms(500);
+//		huansic_Edgeboard_SendString(&edgeboard, tempch, i);
+//		Delay_Ms(10);
+		huansic_LED_Set(&led1, (j = !j));
+		Delay_Ms(500);
 	}
 }
 

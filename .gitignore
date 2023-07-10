@@ -31,8 +31,7 @@
 *.out
 *.app
 
-# Makefiles and linkers
-*.ld
+# Makefiles
 *.mk
 */makefile
 

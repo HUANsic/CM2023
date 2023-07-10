@@ -56,6 +56,8 @@ void huansic_LED_Set(LED_TypeDef *led, uint8_t state);
 
 uint8_t huansic_LED_Get(LED_TypeDef *led);
 
+void huansic_Screen_Init(Screen_TypeDef *screen);
+
 void huansic_TouchScreen_IRQ(void);
 
 

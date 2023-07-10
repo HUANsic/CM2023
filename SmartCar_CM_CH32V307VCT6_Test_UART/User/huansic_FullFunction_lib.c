@@ -10,7 +10,7 @@
 void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
 void TIM3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Encoder timer
 void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
-void EXTI5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
+void EXTI9_5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
 
 const uint16_t EDGE_CMD_RESET_LED = 0x3FF8;
 const uint16_t EDGE_CMD_SET_LED = 0x3FFC;
@@ -23,6 +23,7 @@ Servo_TypeDef servo;
 Encoder_TypeDef encoder;
 LED_TypeDef led1, led2, led3, led4;
 PID_TypeDef pid_controller;
+Screen_TypeDef screen;
 
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
@@ -59,6 +60,8 @@ void huansic_Initialize(void) {
 	led3.pin = GPIO_Pin_9;
 	led4.port = GPIOE;
 	led4.pin = GPIO_Pin_10;
+	screen.int_port = GPIOD;
+	screen.int_pin = GPIO_Pin_5;
 
 	// set up PID
 	pid_controller.timer = TIM9;
@@ -96,6 +99,9 @@ void huansic_Initialize(void) {
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 		GPIO_PinRemapConfig(encodermap, ENABLE);
 	}
+
+	// TODO complete this part
+	huansic_Screen_Init(&screen);
 
 	// initialize edgeboard interface
 	huansic_Edgeboard_Init(&edgeboard);
@@ -538,7 +544,7 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 
 	pid_controller->lastTick = newTick;
 
-	pid_controller->lastSpeed = (float) diffTick ;
+	pid_controller->lastSpeed = (float) diffTick;
 
 	float error = pid_controller->goal - pid_controller->lastSpeed;
 	pid_controller->last5Speed = (4.0 * pid_controller->last5Speed + pid_controller->lastSpeed)
@@ -559,7 +565,7 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 			+ pid_controller->kd * dError;
 	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
 
-	huansic_Motor_Set(&motor, (int16_t)(foutput * 300));
+	huansic_Motor_Set(&motor, (int16_t) (foutput * 300));
 }
 
 void huansic_Servo_Init(Servo_TypeDef *servo) {
@@ -767,12 +773,40 @@ uint8_t huansic_LED_Get(LED_TypeDef *led) {
 	return GPIO_ReadOutputDataBit(led->port, led->pin);
 }
 
+void huansic_Screen_Init(Screen_TypeDef *screen) {
+	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+	EXTI_InitTypeDef EXTI_InitStructure = { 0 };
+	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
+
+	RCC_APB2PeriphClockCmd(huansic_getAPB2_fromGPIO(screen->int_port), ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Pin = screen->int_pin;
+	GPIO_Init(screen->int_port, &GPIO_InitStructure);
+
+	/* GPIOA ----> EXTI_Line0 */
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource5);
+	EXTI_InitStructure.EXTI_Line = EXTI_Line5;
+	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+	EXTI_Init(&EXTI_InitStructure);
+
+	// set up NVIC
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	// apply changes
+	NVIC_Init(&NVIC_InitStructure);
+}
+
 void huansic_TouchScreen_IRQ(void) {
 	// TODO complete touch screen IRQ
-	__asm__("nop");
-	__asm__("nop");
-	__asm__("nop");
-	__asm__("nop");
+	uint8_t data[] = { 0x42, 0x06, 0x06, 0x00, 0xFF, 0x4D };
+	//huansic_Edgeboard_SendString(&edgeboard, data, 6);
 }
 
 void TIM9_UP_IRQHandler(void) {
@@ -802,7 +836,9 @@ void USART3_IRQHandler(void) {
 	}
 }
 
-void EXTI5_IRQHandler(void) {
-	EXTI_ClearFlag(EXTI_Line5);
-	huansic_TouchScreen_IRQ();
+void EXTI9_5_IRQHandler(void) {
+	if (EXTI_GetITStatus(EXTI_Line5)) {
+		EXTI_ClearITPendingBit(EXTI_Line5); /* Clear Flag */
+		huansic_TouchScreen_IRQ();
+	}
 }

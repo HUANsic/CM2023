@@ -61,4 +61,14 @@ typedef struct {
 	uint8_t enabled;
 } PID_TypeDef;
 
+typedef struct {
+	SPI_TypeDef *d_spi, *t_spi;
+	GPIO_TypeDef *d_mosi_port, *d_miso_port, *d_cs_port, *d_sck_port;
+	GPIO_TypeDef *t_mosi_port, *t_miso_port, *t_cs_port, *t_sck_port;
+	GPIO_TypeDef *reset_port, *dc_port, *int_port;
+	uint16_t d_mosi_pin, d_miso_pin, d_cs_pin, d_sck_pin;
+	uint16_t t_mosi_pin, t_miso_pin, t_cs_pin, t_sck_pin;
+	uint16_t reset_pin, dc_pin, int_pin;
+} Screen_TypeDef;
+
 #endif /* USER_HUANSIC_TYPES_H_ */
