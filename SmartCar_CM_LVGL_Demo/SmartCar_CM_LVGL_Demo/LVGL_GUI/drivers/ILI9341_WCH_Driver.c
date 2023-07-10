@@ -17,7 +17,7 @@ void ILI9341_SPI_Init(void)
 void ILI9341_SPI_Send(uint8_t SPI_Data)
 {
 	SPI_I2S_SendData(WSPI_INSTANCE, SPI_Data);
-	while((!(SPI3->STATR & 0x02))||SPI3->STATR & 0x80);
+	while((!(SPI3->STATR & 0x02))||(SPI3->STATR & 0x80));
 }
 
 void ILI9341_SPI_SendData(uint8_t *SPI_Data, uint32_t len)

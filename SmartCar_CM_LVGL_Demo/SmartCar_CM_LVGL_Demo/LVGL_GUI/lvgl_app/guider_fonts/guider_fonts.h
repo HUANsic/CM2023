@@ -9,17 +9,10 @@
 extern "C" {
 #endif
 
-#if LVGL_VERSION_MAJOR == 7
 #include "src/font/lv_font.h"
-#else
-#include "font/lv_font.h"
-#endif
 
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_14)
-LV_FONT_DECLARE(lv_font_montserratMedium_16)
 LV_FONT_DECLARE(lv_font_Alatsi_Regular_25)
-LV_FONT_DECLARE(lv_font_montserratMedium_12)
-LV_FONT_DECLARE(lv_font_simsun_18)
 
 
 #ifdef __cplusplus

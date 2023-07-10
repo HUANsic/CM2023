@@ -33,16 +33,6 @@ uint8_t led_flag=0;
 void TIM2_IRQHandler(void){
     if(TIM_GetITStatus(TIM2, TIM_IT_Update)){
         lv_tick_inc(10);
-        if(++cnt>=100){
-            if(led_flag){
-                led_flag=0;
-                GPIO_WriteBit(GPIOE, GPIO_Pin_7, 1);
-            }else{
-                led_flag=1;
-                GPIO_WriteBit(GPIOE, GPIO_Pin_7, 0);
-            }
-            cnt=0;
-        }
         TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
     }
 }
@@ -77,7 +67,7 @@ void WCH_ILI9341_SPI_FullDuplex_Init(void){
     SPI_InitStructure.SPI_CPOL = SPI_CPOL_Low;
     SPI_InitStructure.SPI_CPHA = SPI_CPHA_1Edge;
     SPI_InitStructure.SPI_NSS = SPI_NSS_Soft;
-    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+    SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_2;
     SPI_InitStructure.SPI_FirstBit = SPI_FirstBit_MSB;
     SPI_InitStructure.SPI_CRCPolynomial = 7;
     SPI_Init(SPI3, &SPI_InitStructure);
@@ -124,3 +114,15 @@ void WCH_ILI9341_GPIO_FullDuplex_Init(void){
     GPIO_InitStructure.GPIO_Mode=GPIO_Mode_Out_PP;
     GPIO_Init(GPIOB, &GPIO_InitStructure);
 }
+
+#ifdef NOT_PORTED
+
+void ui_cmd_go(void){
+
+}
+
+void ui_cmd_stop(void){
+
+}
+
+#endif
