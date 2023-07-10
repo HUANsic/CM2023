@@ -18,9 +18,9 @@ void huansic_Clocks_Init(void);
 
 void huansic_Edgeboard_Init(Edge_TypeDef *edgeboard);
 
-void huansic_Edgboard_Send(Edge_TypeDef *edgeboard, char ch);
+void huansic_Edgeboard_Send(Edge_TypeDef *edgeboard, char ch);
 
-void huansic_Edgboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t len);
+void huansic_Edgeboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t len);
 
 void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard);
 
@@ -38,7 +38,7 @@ void huansic_Motor_PID_Init(PID_TypeDef *pid_controller);
 
 void huansic_Motor_PID_SetGoal(PID_TypeDef *pid_controller, int16_t goal);
 
-void huansic_Motor_PID_IRQ(void);
+void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller);
 
 void huansic_Servo_Init(Servo_TypeDef *servo);
 
@@ -53,6 +53,8 @@ float huansic_Encoder_GetFullValue(Encoder_TypeDef *encoder);
 void huansic_LED_Init(LED_TypeDef *led);
 
 void huansic_LED_Set(LED_TypeDef *led, uint8_t state);
+
+uint8_t huansic_LED_Get(LED_TypeDef *led);
 
 void huansic_TouchScreen_IRQ(void);
 

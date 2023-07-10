@@ -7,7 +7,7 @@
 
 #include "huansic_FullFunction_lib.h"
 
-void TIM9_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
+void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
 void TIM3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Encoder timer
 void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
 void EXTI5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
@@ -62,9 +62,9 @@ void huansic_Initialize(void) {
 
 	// set up PID
 	pid_controller.timer = TIM9;
-	pid_controller.kp = 0.000;
-	pid_controller.ki = 0.000;
-	pid_controller.kd = 0.000;
+	pid_controller.kp = 0.0004;
+	pid_controller.ki = 0.00005;
+	pid_controller.kd = 0.00005;
 	pid_controller.dt = 0.050;
 
 	// check port availability
@@ -116,7 +116,7 @@ void huansic_Initialize(void) {
 	huansic_LED_Init(&led4);
 
 	// initialize PID timer
-//	huansic_Motor_PID_Init(&pid_controller);
+	huansic_Motor_PID_Init(&pid_controller);
 }
 
 void huansic_Clocks_Init(void) {
@@ -286,13 +286,13 @@ void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 	}
 }
 
-void huansic_Edgboard_Send(Edge_TypeDef *edgeboard, char ch) {
+void huansic_Edgeboard_Send(Edge_TypeDef *edgeboard, char ch) {
 	while(!(edgeboard->uart->STATR & USART_FLAG_TXE));
 	USART_SendData(edgeboard->uart, ch);
 	while(!(edgeboard->uart->STATR & USART_FLAG_TC));
 }
 
-void huansic_Edgboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t len) {
+void huansic_Edgeboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t len) {
 	uint8_t i;
 	for (i = 0; i < len; i++) {
 		while(!(edgeboard->uart->STATR & (1 << 7)));
@@ -532,8 +532,34 @@ void huansic_Motor_PID_SetGoal(PID_TypeDef *pid_controller, int16_t goal) {
 	pid_controller->goal = (float) goal;
 }
 
-void huansic_Motor_PID_IRQ(void) {
-	// TODO complete PID calculation
+void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
+	float newTick = huansic_Encoder_GetFullValue(&encoder);
+	float diffTick = newTick - pid_controller->lastTick;
+
+	pid_controller->lastTick = newTick;
+
+	pid_controller->lastSpeed = (float) diffTick ;
+
+	float error = pid_controller->goal - pid_controller->lastSpeed;
+	pid_controller->last5Speed = (4.0 * pid_controller->last5Speed + pid_controller->lastSpeed)
+			/ 5.0;
+
+	// Derivative
+	float dError = error - pid_controller->lastError;
+
+	// Proportional
+	pid_controller->lastError = error;
+
+	// Integral
+	pid_controller->sError += pid_controller->lastError;
+
+	// calculate and constrain the duty cycle
+	float foutput = pid_controller->kp * pid_controller->lastError
+			+ pid_controller->ki * pid_controller->sError
+			+ pid_controller->kd * dError;
+	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
+
+	huansic_Motor_Set(&motor, (int16_t)(foutput * 300));
 }
 
 void huansic_Servo_Init(Servo_TypeDef *servo) {
@@ -737,6 +763,10 @@ void huansic_LED_Set(LED_TypeDef *led, uint8_t state) {
 	GPIO_WriteBit(led->port, led->pin, state);
 }
 
+uint8_t huansic_LED_Get(LED_TypeDef *led) {
+	return GPIO_ReadOutputDataBit(led->port, led->pin);
+}
+
 void huansic_TouchScreen_IRQ(void) {
 	// TODO complete touch screen IRQ
 	__asm__("nop");
@@ -745,9 +775,10 @@ void huansic_TouchScreen_IRQ(void) {
 	__asm__("nop");
 }
 
-void TIM9_IRQHandler(void) {
+void TIM9_UP_IRQHandler(void) {
 	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
-	huansic_Motor_PID_IRQ();
+	huansic_Motor_PID_IRQ(&pid_controller);
+	huansic_LED_Set(&led4, huansic_LED_Get(&led4));
 }
 
 void TIM3_IRQHandler(void) {
