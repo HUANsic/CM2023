@@ -8,7 +8,7 @@
 #ifndef USER_HUANSIC_UTIL_H_
 #define USER_HUANSIC_UTIL_H_
 
-#include <huansic_types.h>
+#include "huansic_types.h"
 
 #define HUAN_DefaultMapping 0xFFFFFFFF
 #define HUAN_NoMapping 0x00
@@ -43,6 +43,19 @@ uint32_t huansic_findRemap_edge(Edge_TypeDef *edge);
 
 uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder);
 
+uint32_t huansic_getAPB2_fromGPIO(GPIO_TypeDef *gpio);
+
+uint32_t huansic_getAPB1_fromTIM(TIM_TypeDef *tim);
+
+uint32_t huansic_getAPB2_fromTIM(TIM_TypeDef *tim);
+
+uint32_t huansic_getAPB1_fromUART(USART_TypeDef *usart);
+
+uint32_t huansic_getAPB2_fromUART(USART_TypeDef *usart);
+
+IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart);
+
+IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim);
 
 /*********************************************************************
  * @fn      GPIO_PinRemapConfig
@@ -101,7 +114,5 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder);
  *            GPIO_FullRemap_USART8 - USART8 Full Alternate Function mapping
  *            GPIO_Remap_USART1_HighBit - USART1 Alternate Function mapping high bit
  */
-
-void huansic_Delay_Init(void);
 
 #endif /* USER_HUANSIC_UTIL_H_ */

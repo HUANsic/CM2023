@@ -29,8 +29,8 @@ typedef struct {
 typedef struct {
 	TIM_TypeDef *timer;
 	uint16_t channelP, channelN;
-	GPIO_TypeDef *portP, *portN;
-	uint16_t pinP, pinN;
+	GPIO_TypeDef *portP, *portN, *portEn;
+	uint16_t pinP, pinN, pinEn;
 } Motor_TypeDef;
 
 typedef struct {
@@ -44,6 +44,7 @@ typedef struct {
 	TIM_TypeDef *counter;
 	GPIO_TypeDef *Aport, *Bport;
 	uint16_t Apin, Bpin;
+	uint32_t overflow;
 } Encoder_TypeDef;
 
 typedef struct {

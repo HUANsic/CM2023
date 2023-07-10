@@ -11,12 +11,11 @@
  *******************************************************************************/
 #include "ch32v30x_it.h"
 
+#include "huansic_FullFunction_lib.h"
+
 void NMI_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void HardFault_Handler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-
 /* Private Variables */
-uint8_t HUANSIC_TIM9_UPDATE_COUNTER = 0;
 
 /*********************************************************************
  * @fn      NMI_Handler
@@ -38,11 +37,4 @@ void NMI_Handler(void) {
  */
 void HardFault_Handler(void) {
 	while(1);
-}
-
-void TIM9_UP_IRQHandler(void) {
-	HUANSIC_TIM9_UPDATE_COUNTER++;
-	if (HUANSIC_TIM9_UPDATE_COUNTER % 5 == 0) {	// every fifth one triggers (10Hz)
-		huansic_Motor_PID();
-	}
 }

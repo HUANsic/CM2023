@@ -7,6 +7,11 @@
 
 #include "huansic_FullFunction_lib.h"
 
+void TIM9_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
+void TIM3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Encoder timer
+void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
+void EXTI5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
+
 const uint16_t EDGE_CMD_RESET_LED = 0x3FF8;
 const uint16_t EDGE_CMD_SET_LED = 0x3FFC;
 const uint16_t EDGE_CMD_ENABLE = 0x3F80;
@@ -17,14 +22,10 @@ Motor_TypeDef motor;
 Servo_TypeDef servo;
 Encoder_TypeDef encoder;
 LED_TypeDef led1, led2, led3, led4;
-
 PID_TypeDef pid_controller;
 
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
-
-	// initialize clocks
-	huansic_Clocks_Init();
 
 	// set up port mappings
 	edgeboard.uart = USART3;
@@ -33,12 +34,14 @@ void huansic_Initialize(void) {
 	edgeboard.rxport = GPIOB;
 	edgeboard.rxpin = GPIO_Pin_11;
 	motor.timer = TIM1;
-	motor.channelP = TIM_Channel_1;
-	motor.portP = GPIOA;
-	motor.pinP = GPIO_Pin_8;
-	motor.channelN = TIM_Channel_2;
+	motor.channelN = TIM_Channel_1;
 	motor.portN = GPIOA;
-	motor.pinN = GPIO_Pin_9;
+	motor.pinN = GPIO_Pin_8;
+	motor.channelP = TIM_Channel_2;
+	motor.portP = GPIOA;
+	motor.pinP = GPIO_Pin_9;
+	motor.portEn = GPIOA;
+	motor.pinEn = GPIO_Pin_10;
 	servo.timer = TIM8;
 	servo.channel = TIM_Channel_4;
 	servo.port = GPIOC;
@@ -77,28 +80,43 @@ void huansic_Initialize(void) {
 	}
 
 	// remap any if needed
-	GPIO_PinRemapConfig(edgemap, ENABLE);
-	GPIO_PinRemapConfig(motormap, ENABLE);
-	GPIO_PinRemapConfig(servomap, ENABLE);
-	GPIO_PinRemapConfig(encodermap, ENABLE);
+	if (edgemap && (edgemap != 0xFFFFFFFF)) {
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+		GPIO_PinRemapConfig(edgemap, ENABLE);
+	}
+	if (motormap && (motormap != 0xFFFFFFFF)) {
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+		GPIO_PinRemapConfig(motormap, ENABLE);
+	}
+	if (servomap && (servomap != 0xFFFFFFFF)) {
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+		GPIO_PinRemapConfig(servomap, ENABLE);
+	}
+	if (encodermap && (encodermap != 0xFFFFFFFF)) {
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
+		GPIO_PinRemapConfig(encodermap, ENABLE);
+	}
 
 	// initialize edgeboard interface
-	huansic_Edgeboard_Init();
+	huansic_Edgeboard_Init(&edgeboard);
 
 	// initialize motor
-	huansic_Motor_Init();
+	huansic_Motor_Init(&motor);
 
 	// initialize servo
-	huansic_Servo_Init();
+	huansic_Servo_Init(&servo);
 
 	// initialize encoder
-	huansic_Encoder_Init();
+	huansic_Encoder_Init(&encoder);
 
 	// initialize the LEDs
-	huansic_LED_Init();
+	huansic_LED_Init(&led1);
+	huansic_LED_Init(&led2);
+	huansic_LED_Init(&led3);
+	huansic_LED_Init(&led4);
 
 	// initialize PID timer
-	huansic_Motor_PID_Init();
+//	huansic_Motor_PID_Init(&pid_controller);
 }
 
 void huansic_Clocks_Init(void) {
@@ -161,7 +179,7 @@ void huansic_Clocks_Init(void) {
 	RCC->APB2PCENR = rcc_apb2pcenr;
 }
 
-void huansic_Edgeboard_Init(void) {
+void huansic_Edgeboard_Init(Edge_TypeDef *edgeboard) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 	USART_InitTypeDef USART_InitStructure = { 0 };
 	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
@@ -169,100 +187,26 @@ void huansic_Edgeboard_Init(void) {
 	IRQn_Type irq;
 
 	// enable TX GPIO port
-	switch (edgeboard.txport) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
+	temp32_2 |= huansic_getAPB2_fromGPIO(edgeboard->txport);
 	// enable RX GPIO port
-	switch (edgeboard.rxport) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
+	temp32_2 |= huansic_getAPB2_fromGPIO(edgeboard->rxport);
 	// enable UART and find interrupt vector
-	switch (edgeboard.uart) {
-	case USART1:
-		temp32_2 |= RCC_APB2Periph_USART1;
-		irq = USART1_IRQn;
-		break;
-	case USART2:
-		temp32_1 |= RCC_APB1Periph_USART2;
-		irq = USART2_IRQn;
-		break;
-	case USART3:
-		temp32_1 |= RCC_APB1Periph_USART3;
-		irq = USART3_IRQn;
-		break;
-	case UART4:
-		temp32_1 |= RCC_APB1Periph_UART4;
-		irq = UART4_IRQn;
-		break;
-	case UART5:
-		temp32_1 |= RCC_APB1Periph_UART5;
-		irq = UART5_IRQn;
-		break;
-	case UART6:
-		temp32_1 |= RCC_APB1Periph_UART6;
-		irq = UART6_IRQn;
-		break;
-	case UART7:
-		temp32_1 |= RCC_APB1Periph_UART7;
-		irq = UART7_IRQn;
-		break;
-	case UART8:
-		temp32_1 |= RCC_APB1Periph_UART8;
-		irq = UART8_IRQn;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
+	temp32_1 |= huansic_getAPB1_fromUART(edgeboard->uart);
+	temp32_2 |= huansic_getAPB2_fromUART(edgeboard->uart);
+	irq = huansic_getIRQ_fromUART(edgeboard->uart);
+
 	// apply changes
 	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
 	// set up TX and RX GPIO
-	GPIO_InitStructure.GPIO_Pin = edgeboard.txpin;
+	GPIO_InitStructure.GPIO_Pin = edgeboard->txpin;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_Init(edgeboard.txport, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = edgeboard.rxpin;
+	GPIO_Init(edgeboard->txport, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = edgeboard->rxpin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(edgeboard.rxport, &GPIO_InitStructure);
+	GPIO_Init(edgeboard->rxport, &GPIO_InitStructure);
 
 	// set up UART
 	USART_InitStructure.USART_BaudRate = 115200;
@@ -273,66 +217,90 @@ void huansic_Edgeboard_Init(void) {
 	USART_InitStructure.USART_Mode = USART_Mode_Tx | USART_Mode_Rx;
 
 	// apply changes
-	USART_Init(edgeboard.uart, &USART_InitStructure);
+	USART_Init(edgeboard->uart, &USART_InitStructure);
 
 	// enable receiving interrupt
-	USART_ITConfig(edgeboard.uart, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(edgeboard->uart, USART_IT_RXNE, ENABLE);
 
 	// set up NVIC
 	NVIC_InitStructure.NVIC_IRQChannel = irq;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;	// 2nd highest priority
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;			// highest sub-priority
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
 	// apply changes
 	NVIC_Init(&NVIC_InitStructure);
 
 	// start UART
-	USART_Cmd(edgeboard.uart, ENABLE);
+	USART_Cmd(edgeboard->uart, ENABLE);
 }
 
-void huansic_Edgeboard_Interpret(void) {
+void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 	uint16_t utemp16;
 	int16_t stemp16;
 	int8_t stemp8;
 
-	utemp16 = ((uint16_t) edgeboard.highByte << 7) | ((uint16_t) (edgeboard.lowByte));
+	utemp16 = ((uint16_t) edgeboard->highByte << 7) | ((uint16_t) (edgeboard->lowByte));
 
 	if (utemp16 >= EDGE_CMD_RESET_LED) {		// 0x3FF8~0x3FFF is for controlling the LEDs
 		utemp16 &= ~EDGE_CMD_RESET_LED;
 		if (utemp16 == 0x00) {
-			huansic_LED1_Set(0);
+			huansic_LED_Set(&led1, 0);
 		} else if (utemp16 == 0x01) {
-			huansic_LED2_Set(0);
+			huansic_LED_Set(&led2, 0);
 		} else if (utemp16 == 0x02) {
-			huansic_LED3_Set(0);
+			huansic_LED_Set(&led3, 0);
 		} else if (utemp16 == 0x03) {
-			huansic_LED4_Set(0);
+			huansic_LED_Set(&led4, 0);
 		} else if (utemp16 == 0x04) {
-			huansic_LED1_Set(1);
+			huansic_LED_Set(&led1, 1);
 		} else if (utemp16 == 0x05) {
-			huansic_LED2_Set(1);
+			huansic_LED_Set(&led2, 1);
 		} else if (utemp16 == 0x06) {
-			huansic_LED3_Set(1);
+			huansic_LED_Set(&led3, 1);
 		} else if (utemp16 == 0x07) {
-			huansic_LED4_Set(1);
+			huansic_LED_Set(&led4, 1);
 		}
 	} else if (utemp16 >= EDGE_CMD_ENABLE) {		// 0x3F80~0x3FF8 enables PID output
-		pid_controller.enabled = 1;
+		huansic_Motor_Enable(&motor);
 	} else if (utemp16 >= EDGE_CMD_DISABLE) {		// 0x3F00~0x3F80 disables PID output
-		pid_controller.enabled = 0;
-	} else if (utemp16 >= 2200) {
+		huansic_Motor_Disable(&motor);
+	} else if (utemp16 >= 0x0FC8) {		// 4040
 		// reserved
-	} else if (utemp16 >= 2000) {		// 2000~2200 sets the servo angle
-		stemp8 = utemp16 - 2100;
-		huansic_Servo_Set(stemp8);
-	} else if (utemp16 >= 1600) {
+	} else if (utemp16 >= 0x0F00) {		// 3840
+		// 3840~4040 sets the servo angle
+		stemp8 = utemp16 - 3940;
+		huansic_Servo_Set(&servo, stemp8);
+	} else if (utemp16 >= 0x0E40) {		// 3648
+		// reserved
+	} else if (utemp16 >= 0x0800) {		// 2048
+		stemp16 = utemp16 - 0x0800;
+		stemp16 -= 800;
+		huansic_Motor_Set(&motor, stemp16);
+	} else if (utemp16 >= 0x0640) {		// 1600
 		// reserved
 	} else {		// motor output is limited to below 1600 (-800 to 800)
 		stemp16 = utemp16;
 		stemp16 -= 800;
-		huansic_Motor_PID_SetGoal(stemp16);
+		huansic_Motor_PID_SetGoal(&pid_controller, stemp16);
 	}
+}
+
+void huansic_Edgboard_Send(Edge_TypeDef *edgeboard, char ch) {
+	while(!(edgeboard->uart->STATR & USART_FLAG_TXE));
+	USART_SendData(edgeboard->uart, ch);
+	while(!(edgeboard->uart->STATR & USART_FLAG_TC));
+}
+
+void huansic_Edgboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t len) {
+	uint8_t i;
+	for (i = 0; i < len; i++) {
+		while(!(edgeboard->uart->STATR & (1 << 7)));
+		// wait for TXE to be set
+		USART_SendData(edgeboard->uart, str[i]);
+	}
+	while(!(edgeboard->uart->STATR & (1 << 6)));
+	// wait for TC to be set
 }
 
 void huansic_Edgeboard_IRQ(void) {
@@ -342,157 +310,89 @@ void huansic_Edgeboard_IRQ(void) {
 		edgeboard.highByte = utemp8 & 0x7F;		// clear the highest byte
 	} else {
 		edgeboard.lowByte = utemp8;
-		huansic_Edgeboard_Interpret();	// interpret the message every time a lower byte is received
+		huansic_Edgeboard_Interpret(&edgeboard);// interpret the message every time a lower byte is received
 	}
 }
 
-void huansic_Motor_Init(void) {
+void huansic_Motor_Init(Motor_TypeDef *motor) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 	TIM_OCInitTypeDef TIM_OCInitStructure = { 0 };
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure = { 0 };
 	uint32_t temp32_1 = 0, temp32_2 = 0;
 
-// enable positive GPIO port
-	switch (motor.portP) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// enable negative GPIO port
-	switch (motor.portN) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// enable PWM timer
-	switch (motor.timer) {
-	case TIM1:
-		temp32_2 |= RCC_APB2Periph_TIM1;
-		break;
-	case TIM2:
-		temp32_1 |= RCC_APB1Periph_TIM2;
-		break;
-	case TIM3:
-		temp32_1 |= RCC_APB1Periph_TIM3;
-		break;
-	case TIM4:
-		temp32_1 |= RCC_APB1Periph_TIM4;
-		break;
-	case TIM5:
-		temp32_1 |= RCC_APB1Periph_TIM5;
-		break;
-	case TIM6:
-		temp32_1 |= RCC_APB1Periph_TIM6;
-		break;
-	case TIM7:
-		temp32_1 |= RCC_APB1Periph_TIM7;
-		break;
-	case TIM8:
-		temp32_2 |= RCC_APB2Periph_TIM8;
-		break;
-	case TIM9:
-		temp32_2 |= RCC_APB2Periph_TIM9;
-		break;
-	case TIM10:
-		temp32_2 |= RCC_APB2Periph_TIM10;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// apply changes
+	// enable GPIO ports
+	temp32_2 |= huansic_getAPB2_fromGPIO(motor->portP);
+	temp32_2 |= huansic_getAPB2_fromGPIO(motor->portN);
+	temp32_2 |= huansic_getAPB2_fromGPIO(motor->portEn);
+	// enable PWM timer
+	temp32_1 |= huansic_getAPB1_fromTIM(motor->timer);
+	temp32_2 |= huansic_getAPB2_fromTIM(motor->timer);
+	// apply changes
 	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
-// positive output pin configuration
-	GPIO_InitStructure.GPIO_Pin = motor.pinP;
+	// positive output pin configuration
+	GPIO_InitStructure.GPIO_Pin = motor->pinP;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(motor.portP, &GPIO_InitStructure);
+	GPIO_Init(motor->portP, &GPIO_InitStructure);
 
-// negative output pin configuration
+	// negative output pin configuration
 	GPIO_InitStructure.GPIO_Pin = motor->pinN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(motor.portN, &GPIO_InitStructure);
+	GPIO_Init(motor->portN, &GPIO_InitStructure);
 
-// set up timer basic properties
+	// enable pin configuration
+	GPIO_InitStructure.GPIO_Pin = motor->pinEn;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(motor->portEn, &GPIO_InitStructure);
+
+	// set up timer basic properties
 	TIM_TimeBaseInitStructure.TIM_Period = 800 - 1;		// period (50us)(20kHz)
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 9 - 1;	// prescaler
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(motor.timer, &TIM_TimeBaseInitStructure);
+	TIM_TimeBaseInit(motor->timer, &TIM_TimeBaseInitStructure);
 
-// set up channel
+	// set up channel
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	TIM_OCInitStructure.TIM_Pulse = 0;
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-// apply changes to positive channel
-	switch (motor.channelP) {
+	// apply changes to positive channel
+	switch (motor->channelP) {
 	case TIM_Channel_1:
-		TIM_OC1Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC1Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC2Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC3Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC4Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	default:
 		while(1) {
 			Delay_Ms(1000);
 		}
 	}
-// apply changes to negative channel
-	switch (motor.channelN) {
+	// apply changes to negative channel
+	switch (motor->channelN) {
 	case TIM_Channel_1:
-		TIM_OC1Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC1Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC2Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC3Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4Init(motor.timer, TIM_OCInitStructure);
+		TIM_OC4Init(motor->timer, &TIM_OCInitStructure);
 		break;
 	default:
 		while(1) {
@@ -500,58 +400,61 @@ void huansic_Motor_Init(void) {
 		}
 	}
 
-// enable auto reload for the positive channel
-	switch (motor.channelP) {
+	// enable auto reload for the positive channel
+	switch (motor->channelP) {
 	case TIM_Channel_1:
-		TIM_OC1PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC1PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC2PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC3PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC4PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	default:
 		while(1) {
 			Delay_Ms(1000);
 		}
 	}
-// enable auto reload for the negative channel
-	switch (motor.channelN) {
+	// enable auto reload for the negative channel
+	switch (motor->channelN) {
 	case TIM_Channel_1:
-		TIM_OC1PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC1PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC2PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC3PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4PreloadConfig(motor.timer, TIM_OCPreload_Enable);
+		TIM_OC4PreloadConfig(motor->timer, TIM_OCPreload_Enable);
 		break;
 	default:
 		while(1) {
 			Delay_Ms(1000);
 		}
 	}
-// then enable the overall auto reload function
-	TIM_ARRPreloadConfig(motor.timer, ENABLE);
+	// then enable the overall auto reload function
+	TIM_ARRPreloadConfig(motor->timer, ENABLE);
 
-// configure interrupt (disable any)
-	TIM_ITConfig(motor.timer, TIM_IT_Update, DISABLE);
+	// configure interrupt (disable any)
+	TIM_ITConfig(motor->timer, TIM_IT_Update, DISABLE);
 
-// enable PWM outputs
-	TIM_CtrlPWMOutputs(motor.timer, ENABLE);
+	// enable PWM outputs
+	TIM_CtrlPWMOutputs(motor->timer, ENABLE);
 
-// start the timer
-	TIM_Cmd(motor.timer, ENABLE);
+	// start the timer
+	TIM_Cmd(motor->timer, ENABLE);
+
+	// disable driver for now
+	huansic_Motor_Disable(motor);
 }
 
-void huansic_Motor_Set(int16_t power) {
+void huansic_Motor_Set(Motor_TypeDef *motor, int16_t power) {
 	uint16_t posPower, negPower;
 // -800 to 800; 800 > period(799) means full on, different from 799
 	power = (power < -800) ? -800 : ((power > 800) ? 800 : power);
@@ -559,218 +462,128 @@ void huansic_Motor_Set(int16_t power) {
 	negPower = power < 0 ? -power : 0;
 
 // apply positive
-	if (motor.channelP == TIM_Channel_1) {
-		motor.timer->CH1CVR = posPower;
-	} else if (motor.channelP == TIM_Channel_2) {
-		motor.timer->CH2CVR = posPower;
-	} else if (motor.channelP == TIM_Channel_3) {
-		motor.timer->CH3CVR = posPower;
-	} else if (motor.channelP == TIM_Channel_4) {
-		motor.timer->CH4CVR = posPower;
+	if (motor->channelP == TIM_Channel_1) {
+		motor->timer->CH1CVR = posPower;
+	} else if (motor->channelP == TIM_Channel_2) {
+		motor->timer->CH2CVR = posPower;
+	} else if (motor->channelP == TIM_Channel_3) {
+		motor->timer->CH3CVR = posPower;
+	} else if (motor->channelP == TIM_Channel_4) {
+		motor->timer->CH4CVR = posPower;
 	}
 // apply negative
-	if (motor.channelN == TIM_Channel_1) {
-		motor.timer->CH1CVR = negPower;
-	} else if (motor.channelN == TIM_Channel_2) {
-		motor.timer->CH2CVR = negPower;
-	} else if (motor.channelN == TIM_Channel_3) {
-		motor.timer->CH3CVR = negPower;
-	} else if (motor.channelN == TIM_Channel_4) {
-		motor.timer->CH4CVR = negPower;
+	if (motor->channelN == TIM_Channel_1) {
+		motor->timer->CH1CVR = negPower;
+	} else if (motor->channelN == TIM_Channel_2) {
+		motor->timer->CH2CVR = negPower;
+	} else if (motor->channelN == TIM_Channel_3) {
+		motor->timer->CH3CVR = negPower;
+	} else if (motor->channelN == TIM_Channel_4) {
+		motor->timer->CH4CVR = negPower;
 	}
 }
 
-void huansic_Motor_PID_Init(void) {
+void huansic_Motor_Enable(Motor_TypeDef *motor) {
+	GPIO_WriteBit(motor->portEn, motor->pinEn, 1);
+}
+
+void huansic_Motor_Disable(Motor_TypeDef *motor) {
+	GPIO_WriteBit(motor->portEn, motor->pinEn, 0);
+}
+
+void huansic_Motor_PID_Init(PID_TypeDef *pid_controller) {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure = { 0 };
 	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
 	uint32_t temp32_1 = 0, temp32_2 = 0;
 	IRQn_Type irq;
 
-// enable timer
-	switch (pid_controller.timer) {
-	case TIM1:
-		temp32_2 |= RCC_APB2Periph_TIM1;
-		irq = TIM1_UP_IRQn;
-		break;
-	case TIM2:
-		temp32_1 |= RCC_APB1Periph_TIM2;
-		irq = TIM2_IRQn;
-		break;
-	case TIM3:
-		temp32_1 |= RCC_APB1Periph_TIM3;
-		irq = TIM3_IRQn;
-		break;
-	case TIM4:
-		temp32_1 |= RCC_APB1Periph_TIM4;
-		irq = TIM4_IRQn;
-		break;
-	case TIM5:
-		temp32_1 |= RCC_APB1Periph_TIM5;
-		irq = TIM5_IRQn;
-		break;
-	case TIM6:
-		temp32_1 |= RCC_APB1Periph_TIM6;
-		irq = TIM6_IRQn;
-		break;
-	case TIM7:
-		temp32_1 |= RCC_APB1Periph_TIM7;
-		irq = TIM7_IRQn;
-		break;
-	case TIM8:
-		temp32_2 |= RCC_APB2Periph_TIM8;
-		irq = TIM8_UP_IRQn;
-		break;
-	case TIM9:
-		temp32_2 |= RCC_APB2Periph_TIM9;
-		irq = TIM9_UP_IRQn;
-		break;
-	case TIM10:
-		temp32_2 |= RCC_APB2Periph_TIM10;
-		irq = TIM10_UP_IRQn;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// apply changes
+	// enable timer
+	temp32_1 |= huansic_getAPB1_fromTIM(pid_controller->timer);
+	temp32_2 |= huansic_getAPB2_fromTIM(pid_controller->timer);
+	irq = huansic_getIRQ_fromTIM(pid_controller->timer);
+	// apply changes
 	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
-// set up timer basic properties
-	TIM_TimeBaseInitStructure.TIM_Period = 2000 - 1;// period (2000ticks/cycle*10us/tick=20ms/cycle)
+	// set up timer basic properties
+	TIM_TimeBaseInitStructure.TIM_Period = 5000 - 1;// period (5000ticks/cycle*10us/tick=50ms/cycle)
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 1440 - 1;	// prescaler (1/144MHz*1440=10us/tick)
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-// apply changes
-	TIM_TimeBaseInit(pid_controller.timer, &TIM_TimeBaseInitStructure);
+	// apply changes
+	TIM_TimeBaseInit(pid_controller->timer, &TIM_TimeBaseInitStructure);
 
-// configure interrupt (enable update)
-	TIM_ITConfig(pid_controller.timer, TIM_IT_Update, ENABLE);
+	// configure interrupt (enable update)
+	TIM_ITConfig(pid_controller->timer, TIM_IT_Update, ENABLE);
 
 	// set up NVIC
-    NVIC_InitStructure.NVIC_IRQChannel = irq;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    // apply changes
-    NVIC_Init(&NVIC_InitStructure);
+	NVIC_InitStructure.NVIC_IRQChannel = irq;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;	// 2nd highest priority
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;			// 2nd highest sub-priority
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	// apply changes
+	NVIC_Init(&NVIC_InitStructure);
 
-// start the timer
-	TIM_Cmd(pid_controller.timer, ENABLE);
+	// start the timer
+	TIM_Cmd(pid_controller->timer, ENABLE);
 }
 
-void huansic_Motor_PID_SetGoal(int16_t goal) {
-	pid_controller.goal = (float) goal;
+void huansic_Motor_PID_SetGoal(PID_TypeDef *pid_controller, int16_t goal) {
+	pid_controller->goal = (float) goal;
 }
 
 void huansic_Motor_PID_IRQ(void) {
 	// TODO complete PID calculation
 }
 
-void huansic_Servo_Init(void) {
+void huansic_Servo_Init(Servo_TypeDef *servo) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 	TIM_OCInitTypeDef TIM_OCInitStructure = { 0 };
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure = { 0 };
-	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
 	uint32_t temp32_1 = 0, temp32_2 = 0;
 
-// enable GPIO port
-	switch (servo.port) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// enable PWM timer
-	switch (servo.timer) {
-	case TIM1:
-		temp32_2 |= RCC_APB2Periph_TIM1;
-		break;
-	case TIM2:
-		temp32_1 |= RCC_APB1Periph_TIM2;
-		break;
-	case TIM3:
-		temp32_1 |= RCC_APB1Periph_TIM3;
-		break;
-	case TIM4:
-		temp32_1 |= RCC_APB1Periph_TIM4;
-		break;
-	case TIM5:
-		temp32_1 |= RCC_APB1Periph_TIM5;
-		break;
-	case TIM6:
-		temp32_1 |= RCC_APB1Periph_TIM6;
-		break;
-	case TIM7:
-		temp32_1 |= RCC_APB1Periph_TIM7;
-		break;
-	case TIM8:
-		temp32_2 |= RCC_APB2Periph_TIM8;
-		break;
-	case TIM9:
-		temp32_2 |= RCC_APB2Periph_TIM9;
-		break;
-	case TIM10:
-		temp32_2 |= RCC_APB2Periph_TIM10;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// apply changes
+	// enable GPIO port
+	temp32_2 |= huansic_getAPB2_fromGPIO(servo->port);
+	// enable PWM timer
+	temp32_1 |= huansic_getAPB1_fromTIM(servo->timer);
+	temp32_2 |= huansic_getAPB2_fromTIM(servo->timer);
+	// apply changes
 	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
-// set GPIO pin mode to AF mode and set to proper speed level
-	GPIO_InitStructure.GPIO_Pin = servo.pin;
+	// set GPIO pin mode to AF mode and set to proper speed level
+	GPIO_InitStructure.GPIO_Pin = servo->pin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-// apply changes
-	GPIO_Init(servo.port, &GPIO_InitStructure);
+	// apply changes
+	GPIO_Init(servo->port, &GPIO_InitStructure);
 
-// set up timer basic properties
+	// set up timer basic properties
 	TIM_TimeBaseInitStructure.TIM_Period = 2000 - 1;	// period (20ms)
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 1440 - 1;	// prescaler
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-// apply changes
-	TIM_TimeBaseInit(servo.timer, &TIM_TimeBaseInitStructure);
+	// apply changes
+	TIM_TimeBaseInit(servo->timer, &TIM_TimeBaseInitStructure);
 
-// set up channel
+	// set up channel
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
 	TIM_OCInitStructure.TIM_Pulse = 150 - 1;		// center (1.5ms)
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-// apply changes
-	switch (servo.channel) {
+	// apply changes
+	switch (servo->channel) {
 	case TIM_Channel_1:
-		TIM_OC1Init(servo.timer, TIM_OCInitStructure);
+		TIM_OC1Init(servo->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2Init(servo.timer, TIM_OCInitStructure);
+		TIM_OC2Init(servo->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3Init(servo.timer, TIM_OCInitStructure);
+		TIM_OC3Init(servo->timer, &TIM_OCInitStructure);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4Init(servo.timer, TIM_OCInitStructure);
+		TIM_OC4Init(servo->timer, &TIM_OCInitStructure);
 		break;
 	default:
 		while(1) {
@@ -778,233 +591,187 @@ void huansic_Servo_Init(void) {
 		}
 	}
 
-// enable auto reload for the specific channel
-	switch (servo.channel) {
+	// enable auto reload for the specific channel
+	switch (servo->channel) {
 	case TIM_Channel_1:
-		TIM_OC1PreloadConfig(servo.timer, TIM_OCPreload_Enable);
+		TIM_OC1PreloadConfig(servo->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_2:
-		TIM_OC2PreloadConfig(servo.timer, TIM_OCPreload_Enable);
+		TIM_OC2PreloadConfig(servo->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_3:
-		TIM_OC3PreloadConfig(servo.timer, TIM_OCPreload_Enable);
+		TIM_OC3PreloadConfig(servo->timer, TIM_OCPreload_Enable);
 		break;
 	case TIM_Channel_4:
-		TIM_OC4PreloadConfig(servo.timer, TIM_OCPreload_Enable);
+		TIM_OC4PreloadConfig(servo->timer, TIM_OCPreload_Enable);
 		break;
 	default:
 		while(1) {
 			Delay_Ms(1000);
 		}
 	}
-// then enable the overall auto reload function
-	TIM_ARRPreloadConfig(servo.timer, ENABLE);
+	// then enable the overall auto reload function
+	TIM_ARRPreloadConfig(servo->timer, ENABLE);
 
-// configure interrupt (disable any)
-	TIM_ITConfig(servo.timer, TIM_IT_Update, DISABLE);
+	// configure interrupt (disable any)
+	TIM_ITConfig(servo->timer, TIM_IT_Update, DISABLE);
 
-// enable PWM outputs
-	TIM_CtrlPWMOutputs(servo.timer, ENABLE);
+	// enable PWM outputs
+	TIM_CtrlPWMOutputs(servo->timer, ENABLE);
 
-// start the timer
-	TIM_Cmd(servo.timer, ENABLE);
+	// start the timer
+	TIM_Cmd(servo->timer, ENABLE);
 }
 
-void huansic_Servo_Set(int8_t angle) {
+void huansic_Servo_Set(Servo_TypeDef *servo, int16_t angle) {
 	angle = (angle < -100) ? -100 : ((angle > 100) ? 100 : angle);
 	angle += 150 - 1;
 
 	// apply output
-	if (servo.channel == TIM_Channel_1) {
-		servo.timer->CH1CVR = angle;
-	} else if (servo.channel == TIM_Channel_2) {
-		servo.timer->CH2CVR = angle;
-	} else if (servo.channel == TIM_Channel_3) {
-		servo.timer->CH3CVR = angle;
-	} else if (servo.channel == TIM_Channel_4) {
-		servo.timer->CH4CVR = angle;
+	if (servo->channel == TIM_Channel_1) {
+		servo->timer->CH1CVR = angle;
+	} else if (servo->channel == TIM_Channel_2) {
+		servo->timer->CH2CVR = angle;
+	} else if (servo->channel == TIM_Channel_3) {
+		servo->timer->CH3CVR = angle;
+	} else if (servo->channel == TIM_Channel_4) {
+		servo->timer->CH4CVR = angle;
 	}
 }
 
-void huansic_Encoder_Init(void) {
+void huansic_Encoder_Init(Encoder_TypeDef *encoder) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
+	TIM_ICInitTypeDef TIM_ICInitStructure = { 0 };
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure = { 0 };
 	uint32_t temp32_1 = 0, temp32_2 = 0;
+	IRQn_Type irq;
 
-// enable A-input GPIO port
-	switch (encoder.Aport) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// enable B-input GPIO port
-	switch (encoder.Bport) {
-	case GPIOA:
-		temp32_2 |= RCC_APB2Periph_GPIOA;
-		break;
-	case GPIOB:
-		temp32_2 |= RCC_APB2Periph_GPIOB;
-		break;
-	case GPIOC:
-		temp32_2 |= RCC_APB2Periph_GPIOC;
-		break;
-	case GPIOD:
-		temp32_2 |= RCC_APB2Periph_GPIOD;
-		break;
-	case GPIOE:
-		temp32_2 |= RCC_APB2Periph_GPIOE;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// enable PWM timer
-	switch (encoder.counter) {
-	case TIM1:
-		temp32_2 |= RCC_APB2Periph_TIM1;
-		break;
-	case TIM2:
-		temp32_1 |= RCC_APB1Periph_TIM2;
-		break;
-	case TIM3:
-		temp32_1 |= RCC_APB1Periph_TIM3;
-		break;
-	case TIM4:
-		temp32_1 |= RCC_APB1Periph_TIM4;
-		break;
-	case TIM5:
-		temp32_1 |= RCC_APB1Periph_TIM5;
-		break;
-	case TIM6:
-		temp32_1 |= RCC_APB1Periph_TIM6;
-		break;
-	case TIM7:
-		temp32_1 |= RCC_APB1Periph_TIM7;
-		break;
-	case TIM8:
-		temp32_2 |= RCC_APB2Periph_TIM8;
-		break;
-	case TIM9:
-		temp32_2 |= RCC_APB2Periph_TIM9;
-		break;
-	case TIM10:
-		temp32_2 |= RCC_APB2Periph_TIM10;
-		break;
-	default:
-		while(1) {
-			Delay_Ms(1000);
-		}
-	}
-// apply changes
-	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
+	// enable input GPIO ports
+	temp32_2 |= huansic_getAPB2_fromGPIO(encoder->Aport);
+	temp32_2 |= huansic_getAPB2_fromGPIO(encoder->Bport);
+	irq = huansic_getIRQ_fromTIM(encoder->counter);
+
+	// enable PWM timer
+	temp32_1 |= huansic_getAPB1_fromTIM(encoder->counter);
+	temp32_2 |= huansic_getAPB2_fromTIM(encoder->counter);
+	// apply changes
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
+	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 
-// A-input pin configuration
-	GPIO_InitStructure.GPIO_Pin = encoder.Apin;
+	// A-input pin configuration
+	GPIO_InitStructure.GPIO_Pin = encoder->Apin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(encoder.Aport, &GPIO_InitStructure);
+	GPIO_Init(encoder->Aport, &GPIO_InitStructure);
 
-// B-input output pin configuration
-	GPIO_InitStructure.GPIO_Pin = encoder.Bpin;
+	// B-input output pin configuration
+	GPIO_InitStructure.GPIO_Pin = encoder->Bpin;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(encoder.Bport, &GPIO_InitStructure);
+	GPIO_Init(encoder->Bport, &GPIO_InitStructure);
 
-// set up timer basic properties
+	// set up timer basic properties
 	TIM_TimeBaseInitStructure.TIM_Period = 65535;
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 0;
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
-	TIM_TimeBaseInit(encoder.counter, &TIM_TimeBaseInitStructure);
+	TIM_TimeBaseInit(encoder->counter, &TIM_TimeBaseInitStructure);
 
-// set up encoder interface
-	TIM_EncoderInterfaceConfig(encoder.counter, TIM_EncoderMode_TI12, TIM_ICPolarity_Rising,
+	// set up encoder interface
+	TIM_EncoderInterfaceConfig(encoder->counter, TIM_EncoderMode_TI12, TIM_ICPolarity_Rising,
 	TIM_ICPolarity_Rising);
 
-// configure interrupt (disable any)
-	TIM_ITConfig(encoder.counter, TIM_IT_Update, DISABLE);
+	// set up input polarity
+	TIM_ICInitStructure.TIM_Channel = TIM_Channel_1 | TIM_Channel_2;
+	TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+	TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+	TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+	TIM_ICInitStructure.TIM_ICFilter = 0;
+	TIM_ICInit(encoder->counter, &TIM_ICInitStructure);
 
-// enable PWM outputs
-	TIM_CtrlPWMOutputs(encoder.counter, ENABLE);
+	// configure interrupt (enable update)
+	TIM_ClearFlag(encoder->counter, TIM_FLAG_Update);
+	TIM_ITConfig(encoder->counter, TIM_IT_Update, ENABLE);
 
-// start the timer
-	TIM_Cmd(encoder.counter, ENABLE);
+	// set up NVIC
+	NVIC_InitStructure.NVIC_IRQChannel = irq;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;	// highest priority
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	// apply changes
+	NVIC_Init(&NVIC_InitStructure);
+
+	// start the timer
+	TIM_SetCounter(TIM2, 0);
+	TIM_Cmd(encoder->counter, ENABLE);
 }
 
-uint16_t huansic_Encoder_GetValue(void) {
-	return encoder.counter->CNT;
+uint16_t huansic_Encoder_GetValue(Encoder_TypeDef *encoder) {
+	return encoder->counter->CNT;
 }
 
-void huansic_LED_Init(void) {
+float huansic_Encoder_GetFullValue(Encoder_TypeDef *encoder) {
+	float tempf = encoder->overflow;
+	tempf *= 65536;
+	tempf += encoder->counter->CNT;
+	return tempf;
+}
+
+void huansic_LED_Init(LED_TypeDef *led) {
 	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
 
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOE, ENABLE);
+	RCC_APB2PeriphClockCmd(huansic_getAPB2_fromGPIO(led->port), ENABLE);
 
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 
-	GPIO_InitStructure.GPIO_Pin = led1.pin;
-	GPIO_Init(led1.port, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = led2.pin;
-	GPIO_Init(led2.port, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = led3.pin;
-	GPIO_Init(led3.port, &GPIO_InitStructure);
-	GPIO_InitStructure.GPIO_Pin = led4.pin;
-	GPIO_Init(led4.port, &GPIO_InitStructure);
+	GPIO_InitStructure.GPIO_Pin = led->pin;
+	GPIO_Init(led->port, &GPIO_InitStructure);
 
-// turn off for now
-	GPIO_WriteBit(led1.port, led1.pin, Bit_RESET);
-	GPIO_WriteBit(led2.port, led2.pin, Bit_RESET);
-	GPIO_WriteBit(led3.port, led3.pin, Bit_RESET);
-	GPIO_WriteBit(led4.port, led4.pin, Bit_RESET);
+	// turn off for now
+	GPIO_WriteBit(led->port, led->pin, Bit_RESET);
 }
 
-void huansic_LED1_Set(uint8_t state) {
-	if (state)
-		led1.port->BSHR = led1.pin;
-	else
-		led1.port->BCR = led1.pin;
+void huansic_LED_Set(LED_TypeDef *led, uint8_t state) {
+	GPIO_WriteBit(led->port, led->pin, state);
 }
 
-void huansic_LED2_Set(uint8_t state) {
-	if (state)
-		led2.port->BSHR = led2.pin;
-	else
-		led2.port->BCR = led2.pin;
-}
-
-void huansic_LED3_Set(uint8_t state) {
-	if (state)
-		led3.port->BSHR = led3.pin;
-	else
-		led3.port->BCR = led3.pin;
-}
-
-void huansic_LED4_Set(uint8_t state) {
-	if (state)
-		led4.port->BSHR = led4.pin;
-	else
-		led4.port->BCR = led4.pin;
-}
-
-void huansic_TouchScreen_IRQ(void){
+void huansic_TouchScreen_IRQ(void) {
 	// TODO complete touch screen IRQ
+	__asm__("nop");
+	__asm__("nop");
+	__asm__("nop");
+	__asm__("nop");
+}
+
+void TIM9_IRQHandler(void) {
+	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
+	huansic_Motor_PID_IRQ();
+}
+
+void TIM3_IRQHandler(void) {
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update)) {
+		TIM_ClearFlag(TIM3, TIM_FLAG_Update);
+		huansic_LED_Set(&led2, 1);
+		if (encoder.counter->CTLR1 & TIM_DIR) {
+			encoder.overflow--;
+		} else {
+			encoder.overflow++;
+		}
+	}
+//	if(encoder.counter->)
+//	encoder.overflow
+}
+
+void USART3_IRQHandler(void) {
+	if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
+		USART_ClearFlag(USART3, USART_FLAG_RXNE);
+		huansic_Edgeboard_IRQ();
+	}
+}
+
+void EXTI5_IRQHandler(void) {
+	EXTI_ClearFlag(EXTI_Line5);
+	huansic_TouchScreen_IRQ();
 }

@@ -25,8 +25,12 @@
 /* Global define */
 
 /* Global Variable */
-
-
+extern Edge_TypeDef edgeboard;
+extern Motor_TypeDef motor;
+extern Servo_TypeDef servo;
+extern Encoder_TypeDef encoder;
+extern LED_TypeDef led1, led2, led3, led4;
+extern PID_TypeDef pid_controller;
 
 /*********************************************************************
  * @fn      main
@@ -38,15 +42,32 @@
 int main(void)
 {
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-	huansic_Clocks_Init();
 	SystemCoreClockUpdate();
 	Delay_Init();
-//	USART_Printf_Init(115200);
-//	printf("SystemClk:%d\r\n",SystemCoreClock);
-//	printf( "ChipID:%08x\r\n", DBGMCU_GetCHIPID() );
-//	printf("This is printf example\r\n");
-	while(1) {
 
+	huansic_Initialize();
+	huansic_Motor_Set(&motor, 0);
+	huansic_Motor_Enable(&motor);
+	huansic_Servo_Set(&servo, 0);
+
+	uint16_t i = 0;
+//	uint8_t j = 0;
+	while(1) {
+/*
+		for(; i < 40; i++) {
+			Delay_Ms(10);
+			huansic_Servo_Set(&servo, i);
+		}
+		huansic_LED_Set(&led1, (j = !j));
+		for(; i > -40; i--) {
+			Delay_Ms(10);
+			huansic_Servo_Set(&servo, i);
+		}
+*/
+
+//		huansic_Edgboard_Send(&edgeboard, '!');
+		huansic_LED_Set(&led1, (i = !i));
+		Delay_Ms(500);
 	}
 }
 

@@ -5,7 +5,7 @@
  *      Author: ZonghuanWu
  */
 
-#include <huansic_util.h>
+#include "huansic_util.h"
 
 #define PAx	0x10
 #define PBx	0x20
@@ -144,7 +144,7 @@ HUAN_NoMapping,				// 0
  };
  *
  */
-uint8_t huansic_remap_tim_table[][][] = {
+uint8_t huansic_remap_tim_table[][4][5] = {
 		// 0 (leave empty)
 		{
 				{ 0, 0, 0, 0, 0 }, 			// option 1
@@ -225,7 +225,7 @@ uint8_t huansic_remap_tim_table[][][] = {
 };
 
 //						[UARTx][Option][TX|RX]
-uint8_t huansic_remap_uart_table[][][] = {
+uint8_t huansic_remap_uart_table[][4][3] = {
 		// 0 (leave empty)
 		{
 				{ 0, 0, 0 }, 			// option 1
@@ -295,39 +295,28 @@ uint32_t huansic_findRemap_servo(Servo_TypeDef *servo) {
 	uint8_t timer, channel, portpin = 0, i;
 
 	// find timer
-	switch (servo->timer) {
-	case TIM1:
+	if (servo->timer == TIM1) {
 		timer = 1;
-		break;
-	case TIM2:
+	} else if (servo->timer == TIM2) {
 		timer = 2;
-		break;
-	case TIM3:
+	} else if (servo->timer == TIM3) {
 		timer = 3;
-		break;
-	case TIM4:
+	} else if (servo->timer == TIM4) {
 		timer = 4;
-		break;
-	case TIM5:
+	} else if (servo->timer == TIM5) {
 		timer = 5;
-		break;
-	case TIM6:
+	} else if (servo->timer == TIM6) {
 		timer = 6;
-		break;
-	case TIM7:
+	} else if (servo->timer == TIM7) {
 		timer = 7;
-		break;
-	case TIM8:
+	} else if (servo->timer == TIM8) {
 		timer = 8;
-		break;
-	case TIM9:
+	} else if (servo->timer == TIM9) {
 		timer = 9;
-		break;
-	case TIM10:
+	} else if (servo->timer == TIM10) {
 		timer = 10;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -351,24 +340,18 @@ uint32_t huansic_findRemap_servo(Servo_TypeDef *servo) {
 		}
 	}
 	// find port
-	switch (servo->port) {
-	case GPIOA:
+	if (servo->port == GPIOA) {
 		portpin = PAx;
-		break;
-	case GPIOB:
+	} else if (servo->port == GPIOB) {
 		portpin = PBx;
-		break;
-	case GPIOC:
+	} else if (servo->port == GPIOC) {
 		portpin = PCx;
-		break;
-	case GPIOD:
+	} else if (servo->port == GPIOD) {
 		portpin = PDx;
-		break;
-	case GPIOE:
+	} else if (servo->port == GPIOE) {
 		portpin = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -440,39 +423,28 @@ uint32_t huansic_findRemap_motor(Motor_TypeDef *motor) {
 	uint8_t timer, channelP, channelN, portpinP = 0, portpinN = 0, i;
 
 	// find timer
-	switch (motor->timer) {
-	case TIM1:
+	if (motor->timer == TIM1) {
 		timer = 1;
-		break;
-	case TIM2:
+	} else if (motor->timer == TIM2) {
 		timer = 2;
-		break;
-	case TIM3:
+	} else if (motor->timer == TIM3) {
 		timer = 3;
-		break;
-	case TIM4:
+	} else if (motor->timer == TIM4) {
 		timer = 4;
-		break;
-	case TIM5:
+	} else if (motor->timer == TIM5) {
 		timer = 5;
-		break;
-	case TIM6:
+	} else if (motor->timer == TIM6) {
 		timer = 6;
-		break;
-	case TIM7:
+	} else if (motor->timer == TIM7) {
 		timer = 7;
-		break;
-	case TIM8:
+	} else if (motor->timer == TIM8) {
 		timer = 8;
-		break;
-	case TIM9:
+	} else if (motor->timer == TIM9) {
 		timer = 9;
-		break;
-	case TIM10:
+	} else if (motor->timer == TIM10) {
 		timer = 10;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -495,25 +467,38 @@ uint32_t huansic_findRemap_motor(Motor_TypeDef *motor) {
 			Delay_Ms(1000);
 		}
 	}
-	// find port
-	switch (motor->portP) {
-	case GPIOA:
-		portpinP = PAx;
+	// find channelN
+	switch (motor->channelN) {
+	case TIM_Channel_1:
+		channelN = 1;
 		break;
-	case GPIOB:
-		portpinP = PBx;
+	case TIM_Channel_2:
+		channelN = 2;
 		break;
-	case GPIOC:
-		portpinP = PCx;
+	case TIM_Channel_3:
+		channelN = 3;
 		break;
-	case GPIOD:
-		portpinP = PDx;
-		break;
-	case GPIOE:
-		portpinP = PEx;
+	case TIM_Channel_4:
+		channelN = 4;
 		break;
 	default:
 		while(1) {
+			Delay_Ms(1000);
+		}
+	}
+	// find portP
+	if (motor->portP == GPIOA) {
+		portpinP = PAx;
+	} else if (motor->portP == GPIOB) {
+		portpinP = PBx;
+	} else if (motor->portP == GPIOC) {
+		portpinP = PCx;
+	} else if (motor->portP == GPIOD) {
+		portpinP = PDx;
+	} else if (motor->portP == GPIOE) {
+		portpinP = PEx;
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -573,24 +558,18 @@ uint32_t huansic_findRemap_motor(Motor_TypeDef *motor) {
 		}
 	}
 	// find portN
-	switch (motor->portN) {
-	case GPIOA:
+	if (motor->portN == GPIOA) {
 		portpinN = PAx;
-		break;
-	case GPIOB:
+	} else if (motor->portN == GPIOB) {
 		portpinN = PBx;
-		break;
-	case GPIOC:
+	} else if (motor->portN == GPIOC) {
 		portpinN = PCx;
-		break;
-	case GPIOD:
+	} else if (motor->portN == GPIOD) {
 		portpinN = PDx;
-		break;
-	case GPIOE:
+	} else if (motor->portN == GPIOE) {
 		portpinN = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -663,55 +642,40 @@ uint32_t huansic_findRemap_edge(Edge_TypeDef *edge) {
 	uint8_t uart, portpintx = 0, portpinrx = 0, i;
 
 	// find uart
-	switch (edge->uart) {
-	case USART1:
+	if (edge->uart == USART1) {
 		uart = 1;
-		break;
-	case USART2:
+	} else if (edge->uart == USART2) {
 		uart = 2;
-		break;
-	case USART3:
+	} else if (edge->uart == USART3) {
 		uart = 3;
-		break;
-	case UART4:
+	} else if (edge->uart == UART4) {
 		uart = 4;
-		break;
-	case UART5:
+	} else if (edge->uart == UART5) {
 		uart = 5;
-		break;
-	case UART6:
+	} else if (edge->uart == UART6) {
 		uart = 6;
-		break;
-	case UART7:
+	} else if (edge->uart == UART7) {
 		uart = 7;
-		break;
-	case UART8:
+	} else if (edge->uart == UART8) {
 		uart = 8;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
 	// find porttx
-	switch (edge->txport) {
-	case GPIOA:
+	if (edge->txport == GPIOA) {
 		portpintx = PAx;
-		break;
-	case GPIOB:
+	} else if (edge->txport == GPIOB) {
 		portpintx = PBx;
-		break;
-	case GPIOC:
+	} else if (edge->txport == GPIOC) {
 		portpintx = PCx;
-		break;
-	case GPIOD:
+	} else if (edge->txport == GPIOD) {
 		portpintx = PDx;
-		break;
-	case GPIOE:
+	} else if (edge->txport == GPIOE) {
 		portpintx = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -771,24 +735,18 @@ uint32_t huansic_findRemap_edge(Edge_TypeDef *edge) {
 		}
 	}
 	// find portrx
-	switch (edge->rxport) {
-	case GPIOA:
+	if (edge->rxport == GPIOA) {
 		portpinrx = PAx;
-		break;
-	case GPIOB:
+	} else if (edge->rxport == GPIOB) {
 		portpinrx = PBx;
-		break;
-	case GPIOC:
+	} else if (edge->rxport == GPIOC) {
 		portpinrx = PCx;
-		break;
-	case GPIOD:
+	} else if (edge->rxport == GPIOD) {
 		portpinrx = PDx;
-		break;
-	case GPIOE:
+	} else if (edge->rxport == GPIOE) {
 		portpinrx = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
@@ -861,66 +819,49 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder) {
 	uint8_t timer, portpinA = 0, portpinB = 0, i;
 
 	// find timer
-	switch (encoder->counter) {
-	case TIM1:
+	if (encoder->counter == TIM1) {
 		timer = 1;
-		break;
-	case TIM2:
+	} else if (encoder->counter == TIM2) {
 		timer = 2;
-		break;
-	case TIM3:
+	} else if (encoder->counter == TIM3) {
 		timer = 3;
-		break;
-	case TIM4:
+	} else if (encoder->counter == TIM4) {
 		timer = 4;
-		break;
-	case TIM5:
+	} else if (encoder->counter == TIM5) {
 		timer = 5;
-		break;
-	case TIM6:
+	} else if (encoder->counter == TIM6) {
 		timer = 6;
-		break;
-	case TIM7:
+	} else if (encoder->counter == TIM7) {
 		timer = 7;
-		break;
-	case TIM8:
+	} else if (encoder->counter == TIM8) {
 		timer = 8;
-		break;
-	case TIM9:
+	} else if (encoder->counter == TIM9) {
 		timer = 9;
-		break;
-	case TIM10:
+	} else if (encoder->counter == TIM10) {
 		timer = 10;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
 	// find Aport
-	switch (motor->portP) {
-	case GPIOA:
+	if (encoder->Aport == GPIOA) {
 		portpinA = PAx;
-		break;
-	case GPIOB:
+	} else if (encoder->Aport == GPIOB) {
 		portpinA = PBx;
-		break;
-	case GPIOC:
+	} else if (encoder->Aport == GPIOC) {
 		portpinA = PCx;
-		break;
-	case GPIOD:
+	} else if (encoder->Aport == GPIOD) {
 		portpinA = PDx;
-		break;
-	case GPIOE:
+	} else if (encoder->Aport == GPIOE) {
 		portpinA = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
 	// find Apin
-	switch (motor->pinP) {
+	switch (encoder->Apin) {
 	case GPIO_Pin_0:
 		portpinA |= Px0;
 		break;
@@ -975,29 +916,23 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder) {
 		}
 	}
 	// find Bport
-	switch (motor->portN) {
-	case GPIOA:
+	if (encoder->Bport == GPIOA) {
 		portpinB = PAx;
-		break;
-	case GPIOB:
+	} else if (encoder->Bport == GPIOB) {
 		portpinB = PBx;
-		break;
-	case GPIOC:
+	} else if (encoder->Bport == GPIOC) {
 		portpinB = PCx;
-		break;
-	case GPIOD:
+	} else if (encoder->Bport == GPIOD) {
 		portpinB = PDx;
-		break;
-	case GPIOE:
+	} else if (encoder->Bport == GPIOE) {
 		portpinB = PEx;
-		break;
-	default:
-		while(1) {
+	} else {
+		while (1) {
 			Delay_Ms(1000);
 		}
 	}
 	// find Bpin
-	switch (motor->pinN) {
+	switch (encoder->Bpin) {
 	case GPIO_Pin_0:
 		portpinB |= Px0;
 		break;
@@ -1061,7 +996,125 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder) {
 	return HUAN_NoMapping;
 }
 
+uint32_t huansic_getAPB2_fromGPIO(GPIO_TypeDef *gpio) {
+	if (gpio == GPIOA)
+		return RCC_APB2Periph_GPIOA;
+	else if (gpio == GPIOB)
+		return RCC_APB2Periph_GPIOB;
+	else if (gpio == GPIOC)
+		return RCC_APB2Periph_GPIOC;
+	else if (gpio == GPIOD)
+		return RCC_APB2Periph_GPIOD;
+	else if (gpio == GPIOE)
+		return RCC_APB2Periph_GPIOE;
+	else
+		return 0;
+}
 
-void huansic_Delay_Init(void){
-	// TODO set up delay timer
+uint32_t huansic_getAPB1_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM2)
+		return RCC_APB1Periph_TIM2;
+	else if (tim == TIM3)
+		return RCC_APB1Periph_TIM3;
+	else if (tim == TIM4)
+		return RCC_APB1Periph_TIM4;
+	else if (tim == TIM5)
+		return RCC_APB1Periph_TIM5;
+	else if (tim == TIM6)
+		return RCC_APB1Periph_TIM6;
+	else if (tim == TIM7)
+		return RCC_APB1Periph_TIM7;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB2_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM1)
+		return RCC_APB2Periph_TIM1;
+	else if (tim == TIM8)
+		return RCC_APB2Periph_TIM8;
+	else if (tim == TIM9)
+		return RCC_APB2Periph_TIM9;
+	else if (tim == TIM10)
+		return RCC_APB2Periph_TIM10;
+	else
+		return 0;
+}
+
+IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart) {
+	if (usart == USART1)
+		return USART1_IRQn;
+	else if (usart == USART2)
+		return USART2_IRQn;
+	else if (usart == USART3)
+		return USART3_IRQn;
+	else if (usart == UART4)
+		return UART4_IRQn;
+	else if (usart == UART5)
+		return UART5_IRQn;
+	else if (usart == UART6)
+		return UART6_IRQn;
+	else if (usart == UART7)
+		return UART7_IRQn;
+	else if (usart == UART8)
+		return UART8_IRQn;
+	else {
+		while (1) {
+			Delay_Ms(1000);
+		}
+	}
+}
+
+uint32_t huansic_getAPB1_fromUART(USART_TypeDef *usart) {
+	if (usart == USART2)
+		return RCC_APB1Periph_USART2;
+	else if (usart == USART3)
+		return RCC_APB1Periph_USART3;
+	else if (usart == UART4)
+		return RCC_APB1Periph_UART4;
+	else if (usart == UART5)
+		return RCC_APB1Periph_UART5;
+	else if (usart == UART6)
+		return RCC_APB1Periph_UART6;
+	else if (usart == UART7)
+		return RCC_APB1Periph_UART7;
+	else if (usart == UART8)
+		return RCC_APB1Periph_UART8;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB2_fromUART(USART_TypeDef *usart) {
+	if (usart == USART1)
+		return RCC_APB2Periph_USART1;
+	else
+		return 0;
+}
+
+IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
+	if (tim == TIM1)
+		return TIM1_UP_IRQn;
+	else if (tim == TIM2)
+		return TIM2_IRQn;
+	else if (tim == TIM3)
+		return TIM3_IRQn;
+	else if (tim == TIM4)
+		return TIM4_IRQn;
+	else if (tim == TIM5)
+		return TIM5_IRQn;
+	else if (tim == TIM6)
+		return TIM6_IRQn;
+	else if (tim == TIM7)
+		return TIM7_IRQn;
+	else if (tim == TIM8)
+		return TIM8_UP_IRQn;
+	else if (tim == TIM9)
+		return TIM9_UP_IRQn;
+	else if (tim == TIM10)
+		return TIM10_UP_IRQn;
+	else {
+		while (1) {
+			Delay_Ms(1000);
+		}
+	}
 }
