@@ -110,7 +110,7 @@ all: SmartCar_CM_LVGL_Demo.elf secondary-outputs
 
 # Tool invocations
 SmartCar_CM_LVGL_Demo.elf: $(OBJS) $(USER_OBJS)
-	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\CM2023\SmartCar_CM_LVGL_Demo\SmartCar_CM_LVGL_Demo\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"SmartCar_CM_LVGL_Demo.map" --specs=nano.specs --specs=nosys.specs -o "SmartCar_CM_LVGL_Demo.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	@	@	riscv-none-embed-gcc -march=rv32imacxw -mabi=ilp32 -msmall-data-limit=8 -msave-restore -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized  -g -T "D:\CM2023\SmartCar_CM_LVGL_Demo\SmartCar_CM_LVGL_Demo\Ld\Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"SmartCar_CM_LVGL_Demo.map" --specs=nano.specs --specs=nosys.specs  -o "SmartCar_CM_LVGL_Demo.elf" $(OBJS) $(USER_OBJS) $(LIBS) -lprintfloat
 	@	@
 SmartCar_CM_LVGL_Demo.hex: SmartCar_CM_LVGL_Demo.elf
 	@	riscv-none-embed-objcopy -O ihex "SmartCar_CM_LVGL_Demo.elf"  "SmartCar_CM_LVGL_Demo.hex"

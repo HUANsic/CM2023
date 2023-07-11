@@ -13,6 +13,8 @@
 static uint8_t is_running=0;
 static lv_ui *ui;
 static uint8_t current_k_x=0;
+static float step=0.001;
+static uint8_t pid_disarm=0;
 
 void events_init(lv_ui *xui)
 {
@@ -23,12 +25,12 @@ static void pid_update(void){
     uint8_t temp[12];
     memset(temp,0,sizeof(temp));
     if(current_k_x==0){
-        sprintf(temp,"Kp=%.3f",ui_Kp);
+        sprintf(temp,"Kp=%.3f",*ui_Kp);
     }else if(current_k_x==1){
-        sprintf(temp,"Ki=%.3f",ui_Ki);
+        sprintf(temp,"Ki=%.3f",*ui_Ki);
     }
     else if(current_k_x==2){
-        sprintf(temp,"Kd=%.3f",ui_Kd);
+        sprintf(temp,"Kd=%.3f",*ui_Kd);
     }
     lv_label_set_text(guider_ui.screen_label_8, temp);
 }
@@ -40,7 +42,11 @@ static void screen_sw_pid_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_VALUE_CHANGED:
 	{
-
+	    if(lv_obj_has_state(guider_ui.screen_sw_pid, LV_STATE_CHECKED)){
+	        pid_disarm=1;
+	    }else{
+	        pid_disarm=0;
+	    }
 	}
 		break;
 	default:
@@ -93,6 +99,17 @@ static void screen_btn_add_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_CLICKED:
 	{
+	    if(pid_disarm){
+            if(current_k_x==0){
+                *ui_Kp+=step;
+            }else if(current_k_x==1){
+                *ui_Ki+=step;
+            }
+            else if(current_k_x==2){
+                *ui_Kd+=step;
+            }
+            pid_update();
+	    }
 	}
 		break;
 	default:
@@ -107,8 +124,23 @@ static void screen_adjstep_list_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_VALUE_CHANGED:
 	{
-	}
+	    if(pid_disarm){
+            uint8_t buf[12];
+            lv_dropdown_get_selected_str(guider_ui.screen_adjstep_list, buf, sizeof(buf));
+            if(!strcmp(buf,"0.001")){
+                step=0.001;
+            }else if(!strcmp(buf,"0.01")){
+                step=0.01;
+            }
+            else if(!strcmp(buf,"0.1")){
+                step=0.1;
+            }
+            else if(!strcmp(buf,"1.0")){
+                step=1.0;
+            }
+	    }
 		break;
+	}
 	default:
 		break;
 	}
@@ -121,6 +153,17 @@ static void screen_btn_sub_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_CLICKED:
 	{
+	    if(pid_disarm){
+            if(current_k_x==0){
+                *ui_Kp-=step;
+            }else if(current_k_x==1){
+                *ui_Ki-=step;
+            }
+            else if(current_k_x==2){
+                *ui_Kd-=step;
+            }
+            pid_update();
+	    }
 	}
 		break;
 	default:
@@ -135,9 +178,9 @@ static void screen_btn_next_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_CLICKED:
 	{
-	    current_k_x++;
-	    current_k_x%=3;
-	    pid_update();
+        current_k_x++;
+        current_k_x%=3;
+        pid_update();
 	}
 		break;
 	default:
