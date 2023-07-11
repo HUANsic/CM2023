@@ -12,9 +12,25 @@
 
 static uint8_t is_running=0;
 static lv_ui *ui;
+static uint8_t current_k_x=0;
+
 void events_init(lv_ui *xui)
 {
     ui=xui;
+}
+
+static void pid_update(void){
+    uint8_t temp[12];
+    memset(temp,0,sizeof(temp));
+    if(current_k_x==0){
+        sprintf(temp,"Kp=%.3f",ui_Kp);
+    }else if(current_k_x==1){
+        sprintf(temp,"Ki=%.3f",ui_Ki);
+    }
+    else if(current_k_x==2){
+        sprintf(temp,"Kd=%.3f",ui_Kd);
+    }
+    lv_label_set_text(guider_ui.screen_label_8, temp);
 }
 
 static void screen_sw_pid_event_handler(lv_event_t *e)
@@ -119,6 +135,9 @@ static void screen_btn_next_event_handler(lv_event_t *e)
 	{
 	case LV_EVENT_CLICKED:
 	{
+	    current_k_x++;
+	    current_k_x%=3;
+	    pid_update();
 	}
 		break;
 	default:

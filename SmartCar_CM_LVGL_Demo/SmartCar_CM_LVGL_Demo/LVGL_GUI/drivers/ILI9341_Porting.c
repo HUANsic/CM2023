@@ -8,6 +8,8 @@
 #include "lvgl.h"
 #include "lv_port_disp.h"
 #include "ILI9341.h"
+#include "gui_guider.h"
+#include <string.h>
 
 void LVGL_TIM2_Init(void){
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure={0};
@@ -125,4 +127,37 @@ void ui_cmd_stop(void){
 
 }
 
+float ui_Kp=0.0f;
+float ui_Ki=0.0f;
+float ui_Kd=0.0f;
+
+void ui_display_Kp(float data){
+    ui_Kp=data;
+}
+
+void ui_display_Ki(float data){
+    ui_Ki=data;
+}
+
+void ui_display_Kd(float data){
+    ui_Kd=data;
+}
+
+void ui_display_speed(float data){
+    uint8_t temp[10];
+    memset(temp,0,sizeof(temp));
+    sprintf(temp,"%.2f m/s",data);
+    lv_label_set_text(guider_ui.screen_label_speed, temp);
+}
+
+void ui_display_pid_goal(float data){
+    uint8_t temp[10];
+    memset(temp,0,sizeof(temp));
+    sprintf(temp,"%.2f m/s",data);
+    lv_label_set_text(guider_ui.screen_label_pidgoal, temp);
+}
+
+void ui_display_step_counter(uint8_t* data){
+    lv_label_set_text(guider_ui.screen_label_stepcounter, data);
+}
 #endif
