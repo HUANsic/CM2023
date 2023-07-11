@@ -1137,6 +1137,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_sw_disarm, 267, 16);
 	lv_obj_set_size(ui->screen_sw_disarm, 40, 20);
 	lv_obj_set_scrollbar_mode(ui->screen_sw_disarm, LV_SCROLLBAR_MODE_OFF);
+	lv_obj_add_state(ui->screen_sw_disarm, LV_STATE_CHECKED);
 
 	//Set style for screen_sw_disarm. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
 	lv_obj_set_style_radius(ui->screen_sw_disarm, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
