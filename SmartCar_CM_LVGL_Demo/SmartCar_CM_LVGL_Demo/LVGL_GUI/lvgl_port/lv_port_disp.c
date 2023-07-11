@@ -152,15 +152,16 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
     if(disp_flush_enabled) {
         /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
         ILI9341_Set_Address(area->x1, area->y1, area->x2, area->y2);
-        uint8_t buffer[2];
         uint32_t counter=(area->y2-area->y1+1)*(area->x2-area->x1+1);
         GPIO_WriteBit(LCD_DC_PORT, LCD_DC_PIN, Bit_SET);
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_RESET);
         for(uint32_t i=0;i<counter;i++){
-            buffer[0]=(((++color_p)->full)>>8);
-            buffer[1]=color_p->full;
-            ILI9341_SPI_SendData(buffer, 2);
+            while((!(WSPI_INSTANCE->STATR & 0x02)));
+            WSPI_INSTANCE->DATAR=(((++color_p)->full)>>8);
+            while((!(WSPI_INSTANCE->STATR & 0x02)));
+            WSPI_INSTANCE->DATAR=color_p->full;
         }
+        while((WSPI_INSTANCE->STATR & 0x80));
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_SET);
     }
 
