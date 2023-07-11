@@ -54,7 +54,7 @@ typedef struct {
 
 typedef struct {
 	TIM_TypeDef *timer;
-	float kp, ki, kd, dt;
+	float kp, ki, kd;
 	float goal, lastSpeed, last5Speed;
 	float error, lastError, sError;
 	float lastTick;
