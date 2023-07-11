@@ -151,21 +151,22 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
 {
     if(disp_flush_enabled) {
         /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one*/
-
-        int32_t x;
-        int32_t y;
-        for(y = area->y1; y <= area->y2; y++) {
-            for(x = area->x1; x <= area->x2; x++) {
-                /*Put a pixel to the display. For example:*/
-                /*put_px(x, y, *color_p)*/
-                uint16_t color565=0;
-                color565|=color_p->ch.blue&0x1f;
-                color565|=((color_p->ch.green&0x3f)<<5);
-                color565|=((color_p->ch.red&0x1f)<<11);
-                ILI9341_Draw_Pixel(x, y, color565);
-                color_p++;
-            }
+        ILI9341_Set_Address(area->x1, area->y1, area->x2, area->y2);
+        uint8_t buffer[2];
+        uint32_t counter=(area->y2-area->y1+1)*(area->x2-area->x1+1);
+        GPIO_WriteBit(LCD_DC_PORT, LCD_DC_PIN, Bit_SET);
+        GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_RESET);
+        for(uint32_t i=0;i<counter;i++){
+            uint16_t color565=0;
+            color565|=color_p->ch.blue&0x1f;
+            color565|=((color_p->ch.green&0x3f)<<5);
+            color565|=((color_p->ch.red&0x1f)<<11);
+            buffer[0]=(color565>>8);
+            buffer[1]=color565;
+            ILI9341_SPI_SendData(buffer, 2);
+            color_p++;
         }
+        GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_SET);
     }
 
     /*IMPORTANT!!!
