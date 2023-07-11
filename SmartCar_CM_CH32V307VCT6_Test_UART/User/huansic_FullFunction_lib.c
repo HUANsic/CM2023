@@ -69,7 +69,7 @@ void huansic_Initialize(void) {
 	pid_controller.kp = 0.0004;
 	pid_controller.ki = 0.00005;
 	pid_controller.kd = 0.00005;
-	pid_controller.dt = 0.050;
+	pid_controller.goal = 0;
 
 	// check port availability
 	edgemap = huansic_findRemap_edge(&edgeboard);
@@ -290,7 +290,7 @@ void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 	} else {		// motor output is limited to below 1600 (-800 to 800)
 		tempf = utemp16;
 		tempf -= 800;
-		huansic_Motor_PID_SetGoal(&pid_controller, 3 * tempf);
+		huansic_Motor_PID_SetGoal(&pid_controller, tempf);
 	}
 }
 
@@ -514,8 +514,8 @@ void huansic_Motor_PID_Init(PID_TypeDef *pid_controller) {
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
 	// set up timer basic properties
-	TIM_TimeBaseInitStructure.TIM_Period = 5000 - 1;// period (5000ticks/cycle*10us/tick=50ms/cycle)
-	TIM_TimeBaseInitStructure.TIM_Prescaler = 1440 - 1;	// prescaler (1/144MHz*1440=10us/tick)
+	TIM_TimeBaseInitStructure.TIM_Period = 200 - 1;// period (200ticks/cycle*100us/tick=20ms/cycle)
+	TIM_TimeBaseInitStructure.TIM_Prescaler = 14400 - 1;	// prescaler (1/144MHz*14400=100us/tick)
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	// apply changes
@@ -548,9 +548,10 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 
 	pid_controller->lastSpeed = (float) diffTick;
 
-	float error = pid_controller->goal - pid_controller->lastSpeed;
 	pid_controller->last5Speed = (4.0 * pid_controller->last5Speed + pid_controller->lastSpeed)
 			/ 5.0;
+
+	float error = pid_controller->goal - pid_controller->last5Speed;	// use running average
 
 	// Derivative
 	float dError = error - pid_controller->lastError;
@@ -819,3 +820,20 @@ void USART3_IRQHandler(void) {
 		huansic_TouchScreen_IRQ();
 	}
 }*/
+
+void ui_cmd_go(void){
+	uint8_t data[] = { 0x42, 0x06, 0x06, 0x00, 0xFF, 0x4D };
+//	huansic_Edgeboard_SendString(&edgeboard, data, 6);
+	uint8_t i;
+		for (i = 0; i < 6; i++) {
+			while(!(USART3->STATR & (1 << 7)));
+			// wait for TXE to be set
+			USART_SendData(USART3, data[i]);
+		}
+		while(!(USART3->STATR & (1 << 6)));
+		// wait for TC to be set
+}
+
+void ui_cmd_stop(void){
+
+}
