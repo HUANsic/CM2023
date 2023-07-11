@@ -157,14 +157,9 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
         GPIO_WriteBit(LCD_DC_PORT, LCD_DC_PIN, Bit_SET);
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_RESET);
         for(uint32_t i=0;i<counter;i++){
-            uint16_t color565=0;
-            color565|=color_p->ch.blue&0x1f;
-            color565|=((color_p->ch.green&0x3f)<<5);
-            color565|=((color_p->ch.red&0x1f)<<11);
-            buffer[0]=(color565>>8);
-            buffer[1]=color565;
+            buffer[0]=(((++color_p)->full)>>8);
+            buffer[1]=color_p->full;
             ILI9341_SPI_SendData(buffer, 2);
-            color_p++;
         }
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_SET);
     }
