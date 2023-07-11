@@ -8,6 +8,8 @@
 #include "lvgl.h"
 #include "lv_port_disp.h"
 #include "ILI9341.h"
+#include "gui_guider.h"
+#include <string.h>
 
 void LVGL_TIM2_Init(void){
     TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure={0};
@@ -118,20 +120,36 @@ void WCH_ILI9341_GPIO_FullDuplex_Init(void){
 #ifdef NOT_PORTED
 
 void ui_cmd_go(void){
-	uint8_t data[] = { 0x42, 0x06, 0x06, 0x00, 0xFF, 0x4D };
-//	huansic_Edgeboard_SendString(&edgeboard, data, 6);
-	uint8_t i;
-		for (i = 0; i < 6; i++) {
-			while(!(USART3->STATR & (1 << 7)));
-			// wait for TXE to be set
-			USART_SendData(USART3, data[i]);
-		}
-		while(!(USART3->STATR & (1 << 6)));
-		// wait for TC to be set
+
 }
 
 void ui_cmd_stop(void){
 
 }
 
+float Kp=0.0;
+float Ki=0.0;
+float Kd=0.0;
+
+float* ui_Kp=&Kp;
+float* ui_Ki=&Ki;
+float* ui_Kd=&Kd;
 #endif
+
+void ui_display_speed(float data){
+    uint8_t temp[10];
+    memset(temp,0,sizeof(temp));
+    sprintf(temp,"%.2f m/s",data);
+    lv_label_set_text(guider_ui.screen_label_speed, temp);
+}
+
+void ui_display_pid_goal(float data){
+    uint8_t temp[10];
+    memset(temp,0,sizeof(temp));
+    sprintf(temp,"%.2f m/s",data);
+    lv_label_set_text(guider_ui.screen_label_pidgoal, temp);
+}
+
+void ui_display_step_counter(uint8_t* data){
+    lv_label_set_text(guider_ui.screen_label_stepcounter, data);
+}

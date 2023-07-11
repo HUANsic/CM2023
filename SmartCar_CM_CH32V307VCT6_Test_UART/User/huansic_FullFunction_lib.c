@@ -66,9 +66,9 @@ void huansic_Initialize(void) {
 
 	// set up PID
 	pid_controller.timer = TIM9;
-	pid_controller.kp = 0.0004;
-	pid_controller.ki = 0.00005;
-	pid_controller.kd = 0.00005;
+	pid_controller.kp = 40;
+	pid_controller.ki = 5;
+	pid_controller.kd = 5;
 	pid_controller.goal = 0;
 
 	// check port availability
@@ -566,6 +566,7 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 	float foutput = pid_controller->kp * pid_controller->lastError
 			+ pid_controller->ki * pid_controller->sError
 			+ pid_controller->kd * dError;
+	foutput /= 100000;
 	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
 
 	huansic_Motor_Set(&motor, (int16_t) (foutput * 300));

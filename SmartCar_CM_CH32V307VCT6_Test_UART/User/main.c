@@ -19,6 +19,7 @@
  */
 
 #include "huansic_FullFunction_lib.h"
+#include "lvgl_all_in.h"
 #include "stdio.h"
 #include "string.h"
 
@@ -34,6 +35,9 @@ extern Encoder_TypeDef encoder;
 extern LED_TypeDef led1, led2, led3, led4;
 extern PID_TypeDef pid_controller;
 
+float* ui_Kp = &pid_controller.kp;
+float* ui_Ki = &pid_controller.ki;
+float* ui_Kd = &pid_controller.kd;
 /*********************************************************************
  * @fn      main
  *
@@ -52,6 +56,10 @@ int main(void)
 	uint8_t j = 0;
 	while(1) {
 		huansic_LED_Set(&led1, (j = !j));
+		ui_display_speed(pid_controller.last5Speed);
+		ui_display_pid_goal(pid_controller.goal);
+//		void ui_display_step_counter(uint8_t* data);
+
 		Delay_Ms(500);
 	}
 }

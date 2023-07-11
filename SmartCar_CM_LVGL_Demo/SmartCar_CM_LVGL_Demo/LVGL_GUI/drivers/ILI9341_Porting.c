@@ -127,21 +127,14 @@ void ui_cmd_stop(void){
 
 }
 
-float ui_Kp=0.0f;
-float ui_Ki=0.0f;
-float ui_Kd=0.0f;
+float Kp=0.0;
+float Ki=0.0;
+float Kd=0.0;
 
-void ui_display_Kp(float data){
-    ui_Kp=data;
-}
-
-void ui_display_Ki(float data){
-    ui_Ki=data;
-}
-
-void ui_display_Kd(float data){
-    ui_Kd=data;
-}
+float* ui_Kp=&Kp;
+float* ui_Ki=&Ki;
+float* ui_Kd=&Kd;
+#endif
 
 void ui_display_speed(float data){
     uint8_t temp[10];
@@ -160,4 +153,3 @@ void ui_display_pid_goal(float data){
 void ui_display_step_counter(uint8_t* data){
     lv_label_set_text(guider_ui.screen_label_stepcounter, data);
 }
-#endif
