@@ -1,6 +1,7 @@
 eclipse.preferences.version=1
 encoding//LVGL_GUI/drivers/ILI9341.h=UTF-8
 encoding//LVGL_GUI/drivers/ILI9341_Porting.c=GBK
+encoding//LVGL_GUI/lvgl/src/misc/lv_area.h=GBK
 encoding//LVGL_GUI/lvgl_app/events_init.c=UTF-8
 encoding//LVGL_GUI/lvgl_app/guider_fonts/lv_font_Alatsi_Regular_14.c=UTF-8
 encoding//User/main.c=GBK
