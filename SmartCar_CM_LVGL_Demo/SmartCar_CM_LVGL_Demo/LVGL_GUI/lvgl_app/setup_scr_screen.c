@@ -114,7 +114,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_label_speed, 10, 42);
 	lv_obj_set_size(ui->screen_label_speed, 109, 42);
 	lv_obj_set_scrollbar_mode(ui->screen_label_speed, LV_SCROLLBAR_MODE_OFF);
-	lv_label_set_text(ui->screen_label_speed, "2.98 m/s");
+	lv_label_set_text(ui->screen_label_speed, "N/A m/s");
 	lv_label_set_long_mode(ui->screen_label_speed, LV_LABEL_LONG_WRAP);
 
 	//Set style for screen_label_speed. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -218,7 +218,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_label_pidgoal, 10, 117);
 	lv_obj_set_size(ui->screen_label_pidgoal, 109, 42);
 	lv_obj_set_scrollbar_mode(ui->screen_label_pidgoal, LV_SCROLLBAR_MODE_OFF);
-	lv_label_set_text(ui->screen_label_pidgoal, "3.00 m/s");
+	lv_label_set_text(ui->screen_label_pidgoal, "N/A m/s");
 	lv_label_set_long_mode(ui->screen_label_pidgoal, LV_LABEL_LONG_WRAP);
 
 	//Set style for screen_label_pidgoal. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -322,7 +322,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_label_stepcounter, 10, 191);
 	lv_obj_set_size(ui->screen_label_stepcounter, 109, 42);
 	lv_obj_set_scrollbar_mode(ui->screen_label_stepcounter, LV_SCROLLBAR_MODE_OFF);
-	lv_label_set_text(ui->screen_label_stepcounter, "ROUND");
+	lv_label_set_text(ui->screen_label_stepcounter, "INITIAL");
 	lv_label_set_long_mode(ui->screen_label_stepcounter, LV_LABEL_LONG_WRAP);
 
 	//Set style for screen_label_stepcounter. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
