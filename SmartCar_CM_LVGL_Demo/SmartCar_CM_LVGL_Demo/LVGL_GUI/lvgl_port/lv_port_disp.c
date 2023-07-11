@@ -155,13 +155,17 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
         uint32_t counter=(area->y2-area->y1+1)*(area->x2-area->x1+1);
         GPIO_WriteBit(LCD_DC_PORT, LCD_DC_PIN, Bit_SET);
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_RESET);
+        WSPI_INSTANCE->CTLR1&=(~(0x0001<<6)); //禁用SPE，读写数据帧长度
+        WSPI_INSTANCE->CTLR1|=(0x0001<<11); //切换为16位
+        WSPI_INSTANCE->CTLR1|=(0x0001<<6); //使能SPE
         for(uint32_t i=0;i<counter;i++){
             while((!(WSPI_INSTANCE->STATR & 0x02)));
-            WSPI_INSTANCE->DATAR=(((++color_p)->full)>>8);
-            while((!(WSPI_INSTANCE->STATR & 0x02)));
-            WSPI_INSTANCE->DATAR=color_p->full;
+            WSPI_INSTANCE->DATAR=(color_p++)->full;
         }
         while((WSPI_INSTANCE->STATR & 0x80));
+        WSPI_INSTANCE->CTLR1&=(~(0x0001<<6)); //禁用SPE，读写数据帧长度
+        WSPI_INSTANCE->CTLR1&=(~(0x0001<<11)); //切换为8位
+        WSPI_INSTANCE->CTLR1|=(0x0001<<6); //使能SPE
         GPIO_WriteBit(LCD_CS_PORT, LCD_CS_PIN, Bit_SET);
     }
 
