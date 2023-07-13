@@ -15,10 +15,12 @@ static lv_ui *ui;
 static uint8_t current_k_x=0;
 static float step=0.001;
 static uint8_t pid_disarm=0;
+static void pid_update(void);
 
 void events_init(lv_ui *xui)
 {
     ui=xui;
+    pid_update();
 }
 
 static void pid_update(void){
@@ -82,7 +84,7 @@ static void screen_btn_go_event_handler(lv_event_t *e)
             lv_obj_set_style_bg_color(ui->screen_btn_go, lv_color_make(0x70, 0xd7, 0x66), LV_PART_MAIN|LV_STATE_PRESSED);
             lv_label_set_text(ui->screen_btn_go_label, "GO");
             is_running=0;
-//            lv_obj_clear_state(ui->screen_sw_disarm, LV_STATE_CHECKED);
+            lv_obj_clear_state(ui->screen_sw_disarm, LV_STATE_CHECKED);
         }
 
 	}

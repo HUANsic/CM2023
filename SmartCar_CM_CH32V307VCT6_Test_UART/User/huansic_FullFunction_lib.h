@@ -24,7 +24,7 @@ void huansic_Edgeboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t le
 
 void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard);
 
-void huansic_Edgeboard_IRQ(void);
+void huansic_Edgeboard_IRQ(Edge_TypeDef *edgeboard, uint8_t msg);
 
 void huansic_Motor_Init(Motor_TypeDef *motor);
 

@@ -38,6 +38,8 @@ extern PID_TypeDef pid_controller;
 float* ui_Kp = &pid_controller.kp;
 float* ui_Ki = &pid_controller.ki;
 float* ui_Kd = &pid_controller.kd;
+
+float output;
 /*********************************************************************
  * @fn      main
  *
@@ -52,12 +54,13 @@ int main(void)
 	Delay_Init();
 
 	huansic_Initialize();
+	huansic_Motor_Enable(&motor);
 
 	uint8_t j = 0;
 	while(1) {
 		huansic_LED_Set(&led1, (j = !j));
-		ui_display_speed(pid_controller.last5Speed);
-		ui_display_pid_goal(pid_controller.goal);
+		ui_display_speed(pid_controller.last5Speed / 1000);
+		ui_display_pid_goal(output);
 //		void ui_display_step_counter(uint8_t* data);
 
 		Delay_Ms(500);
