@@ -10,15 +10,6 @@
 #include "events_init.h"
 #include "custom.h"
 
-static lv_obj_t * g_kb_screen;
-static void kb_screen_event_cb(lv_event_t *e)
-{
-	lv_event_code_t code = lv_event_get_code(e);
-	lv_obj_t *kb = lv_event_get_target(e);
-	if(code == LV_EVENT_READY || code == LV_EVENT_CANCEL){
-		lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-}
 __attribute__((unused)) static void ta_screen_event_cb(lv_event_t *e)
 {
 
@@ -43,13 +34,6 @@ void setup_scr_screen(lv_ui *ui){
 
 	//Write codes screen
 	ui->screen = lv_obj_create(NULL);
-
-	//Create keyboard on screen
-	g_kb_screen = lv_keyboard_create(ui->screen);
-	lv_obj_add_event_cb(g_kb_screen, kb_screen_event_cb, LV_EVENT_ALL, NULL);
-	lv_obj_add_flag(g_kb_screen, LV_OBJ_FLAG_HIDDEN);
-	lv_obj_set_style_text_font(g_kb_screen, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_scrollbar_mode(ui->screen, LV_SCROLLBAR_MODE_OFF);
 
 	//Set style for screen. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
 	lv_obj_set_style_bg_color(ui->screen, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN|LV_STATE_DEFAULT);
