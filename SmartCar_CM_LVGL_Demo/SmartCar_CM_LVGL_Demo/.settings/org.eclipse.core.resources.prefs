@@ -1,7 +1,11 @@
 eclipse.preferences.version=1
 encoding//LVGL_GUI/drivers/ILI9341.h=UTF-8
 encoding//LVGL_GUI/drivers/ILI9341_Porting.c=GBK
+encoding//LVGL_GUI/lvgl/src/font/lv_font_montserrat_10.c=UTF-8
+encoding//LVGL_GUI/lvgl/src/font/lv_font_montserrat_14.c=UTF-8
 encoding//LVGL_GUI/lvgl/src/misc/lv_area.h=GBK
 encoding//LVGL_GUI/lvgl_app/events_init.c=UTF-8
 encoding//LVGL_GUI/lvgl_app/guider_fonts/lv_font_Alatsi_Regular_14.c=UTF-8
+encoding//LVGL_GUI/lvgl_app/guider_fonts/lv_font_Alatsi_Regular_25.c=UTF-8
 encoding//User/main.c=GBK
+encoding//obj/LVGL_GUI/lvgl/src/font/lv_font_montserrat_8.c=UTF-8
