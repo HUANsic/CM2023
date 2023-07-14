@@ -69,9 +69,9 @@ void huansic_Initialize(void) {
 
 	// set up PID
 	pid_controller.timer = TIM9;
-	pid_controller.kp = 30;
-	pid_controller.ki = 4;
-	pid_controller.kd = 10;
+	pid_controller.kp = 300;
+	pid_controller.ki = 40;
+	pid_controller.kd = 100;
 	pid_controller.goal = 0;
 
 	// check port availability
@@ -272,25 +272,39 @@ void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 		} else if (utemp16 == 0x07) {
 			huansic_LED_Set(&led4, 1);
 		}
-	} else if (utemp16 >= EDGE_CMD_ENABLE) {		// 0x3F80~0x3FF8 enables PID output
+	} else if (utemp16 >= EDGE_CMD_ENABLE) {		// 0x3F80~0x3FF7 enables motor output
 		huansic_Motor_Enable(&motor);
-	} else if (utemp16 >= EDGE_CMD_DISABLE) {		// 0x3F00~0x3F80 disables PID output
+	} else if (utemp16 >= EDGE_CMD_DISABLE) {		// 0x3F00~0x3F7F disables motor output
 		huansic_Motor_Disable(&motor);
-	} else if (utemp16 >= 0x0FC8) {		// 4040
+	} else if (utemp16 >= 0x1000) {		// 0x1000~0x3EFF
 		// reserved
-	} else if (utemp16 >= 0x0F00) {		// 3840
+	} else if (utemp16 >= 0x0FD0) {		// 4040; 0x0FD0~0x0FFF
+		stemp8 = (utemp16 << 4);	// keep 4 lowest bits as 2's complement
+		stemp8 >>= 4;				// shift with sign
+		if (utemp16 & 0x0030 == 0x0010) {		// modify kp
+			pid_controller.kp += stemp8;
+		} else if (utemp16 & 0x0030 == 0x0020) {	// modify ki
+			pid_controller.ki += stemp8;
+		} else if (utemp16 & 0x0030 == 0x0030) {	// modify kd
+			pid_controller.kd += stemp8;
+		} else {
+			// reserved (should not happen)
+		}
+	} else if (utemp16 > 0x0FC8) {		// 0x0FC8~0x0FCF
+		// reserved
+	} else if (utemp16 >= 0x0F00) {		// 3840; 0x0F00~0x0FC8
 		// 3840~4040 sets the servo angle
 		stemp8 = utemp16 - 3940;
 		huansic_Servo_Set(&servo, stemp8);
-	} else if (utemp16 >= 0x0E40) {		// 3648
+	} else if (utemp16 > 0x0E40) {		// 3648; 0x0E41~0x0EFF
 		// reserved
-	} else if (utemp16 >= 0x0800) {		// 2048
+	} else if (utemp16 >= 0x0800) {		// 2048; 0x0800~0x0E40
 		stemp16 = utemp16 - 0x0800;
 		stemp16 -= 800;
 		huansic_Motor_Set(&motor, stemp16);
-	} else if (utemp16 >= 0x0640) {		// 1600
+	} else if (utemp16 > 0x0640) {		// 1600; 0x0641~0x07FF
 		// reserved
-	} else {		// motor output is limited to below 1600 (-800 to 800)
+	} else {							// 0x0000~0x0640
 		tempf = utemp16;
 		tempf -= 800;
 		huansic_Motor_PID_SetGoal(&pid_controller, tempf);
@@ -319,7 +333,7 @@ void huansic_Edgeboard_IRQ(Edge_TypeDef *edgeboard, uint8_t msg) {
 		edgeboard->highByte = msg & 0x7F;		// clear the highest byte
 	} else {
 		edgeboard->lowByte = msg;
-		huansic_Edgeboard_Interpret(edgeboard);// interpret the message every time a lower byte is received
+		huansic_Edgeboard_Interpret(edgeboard);	// interpret the message every time a lower byte is received
 	}
 }
 
@@ -494,12 +508,10 @@ void huansic_Motor_Set(Motor_TypeDef *motor, int16_t power) {
 
 void huansic_Motor_Enable(Motor_TypeDef *motor) {
 	GPIO_WriteBit(motor->portEn, motor->pinEn, 1);
-	huansic_LED_Set(&led3, 1);
 }
 
 void huansic_Motor_Disable(Motor_TypeDef *motor) {
 	GPIO_WriteBit(motor->portEn, motor->pinEn, 0);
-	huansic_LED_Set(&led3, 0);
 }
 
 void huansic_Motor_PID_Init(PID_TypeDef *pid_controller) {
@@ -569,7 +581,7 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 	float foutput = pid_controller->kp * pid_controller->lastError
 			+ pid_controller->ki * pid_controller->sError
 			+ pid_controller->kd * dError;
-	foutput /= 100000;
+	foutput /= 1000000;
 	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
 	output = foutput;
 
