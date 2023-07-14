@@ -21,7 +21,7 @@ void ui_display_pid_goal(float data);
 /* 上传当前状态 */
 void ui_display_step_counter(uint8_t* data);
 
-#define NOT_PORTED
+//#define NOT_PORTED
 #ifdef NOT_PORTED
 #warning You have not implement two functions and two pinters which receives the command from the ui.
 #warning You should call ui_display_speed,ui_display_pid_goal and ui_display_step_counter in your code.

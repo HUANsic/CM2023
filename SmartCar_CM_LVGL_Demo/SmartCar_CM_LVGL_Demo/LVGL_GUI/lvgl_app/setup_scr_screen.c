@@ -10,46 +10,11 @@
 #include "events_init.h"
 #include "custom.h"
 
-static lv_obj_t * g_kb_screen;
-static void kb_screen_event_cb(lv_event_t *e)
-{
-	lv_event_code_t code = lv_event_get_code(e);
-	lv_obj_t *kb = lv_event_get_target(e);
-	if(code == LV_EVENT_READY || code == LV_EVENT_CANCEL){
-		lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-}
-__attribute__((unused)) static void ta_screen_event_cb(lv_event_t *e)
-{
-
-	lv_event_code_t code = lv_event_get_code(e);
-	lv_obj_t *ta = lv_event_get_target(e);
-	lv_obj_t *kb = lv_event_get_user_data(e);
-	if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED)
-	{
-		lv_keyboard_set_textarea(kb, ta);
-		lv_obj_move_foreground(kb);
-		lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-	if (code == LV_EVENT_CANCEL || code == LV_EVENT_DEFOCUSED)
-	{
-		lv_keyboard_set_textarea(kb, NULL);
-		lv_obj_move_background(kb);
-		lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-}
 
 void setup_scr_screen(lv_ui *ui){
 
 	//Write codes screen
 	ui->screen = lv_obj_create(NULL);
-
-	//Create keyboard on screen
-	g_kb_screen = lv_keyboard_create(ui->screen);
-	lv_obj_add_event_cb(g_kb_screen, kb_screen_event_cb, LV_EVENT_ALL, NULL);
-	lv_obj_add_flag(g_kb_screen, LV_OBJ_FLAG_HIDDEN);
-	lv_obj_set_style_text_font(g_kb_screen, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
-	lv_obj_set_scrollbar_mode(ui->screen, LV_SCROLLBAR_MODE_OFF);
 
 	//Set style for screen. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
 	lv_obj_set_style_bg_color(ui->screen, lv_color_make(0x00, 0x00, 0x00), LV_PART_MAIN|LV_STATE_DEFAULT);
@@ -114,7 +79,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_label_speed, 10, 42);
 	lv_obj_set_size(ui->screen_label_speed, 109, 42);
 	lv_obj_set_scrollbar_mode(ui->screen_label_speed, LV_SCROLLBAR_MODE_OFF);
-	lv_label_set_text(ui->screen_label_speed, "N/A m/s");
+	lv_label_set_text(ui->screen_label_speed, "N/A");
 	lv_label_set_long_mode(ui->screen_label_speed, LV_LABEL_LONG_WRAP);
 
 	//Set style for screen_label_speed. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -218,7 +183,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_label_pidgoal, 10, 117);
 	lv_obj_set_size(ui->screen_label_pidgoal, 109, 42);
 	lv_obj_set_scrollbar_mode(ui->screen_label_pidgoal, LV_SCROLLBAR_MODE_OFF);
-	lv_label_set_text(ui->screen_label_pidgoal, "N/A m/s");
+	lv_label_set_text(ui->screen_label_pidgoal, "N/A");
 	lv_label_set_long_mode(ui->screen_label_pidgoal, LV_LABEL_LONG_WRAP);
 
 	//Set style for screen_label_pidgoal. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -1033,8 +998,8 @@ void setup_scr_screen(lv_ui *ui){
 
 	//Write codes screen_btn_next
 	ui->screen_btn_next = lv_btn_create(ui->screen);
-	lv_obj_set_pos(ui->screen_btn_next, 237, 119.5);
-	lv_obj_set_size(ui->screen_btn_next, 70, 25);
+	lv_obj_set_pos(ui->screen_btn_next, 260, 119);
+	lv_obj_set_size(ui->screen_btn_next, 45, 25);
 	lv_obj_set_scrollbar_mode(ui->screen_btn_next, LV_SCROLLBAR_MODE_OFF);
 
 	//Set style for screen_btn_next. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -1137,7 +1102,7 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_pos(ui->screen_sw_disarm, 267, 16);
 	lv_obj_set_size(ui->screen_sw_disarm, 40, 20);
 	lv_obj_set_scrollbar_mode(ui->screen_sw_disarm, LV_SCROLLBAR_MODE_OFF);
-	lv_obj_add_state(ui->screen_sw_disarm, LV_STATE_CHECKED);
+	//lv_obj_add_state(ui->screen_sw_disarm, LV_STATE_CHECKED);
 
 	//Set style for screen_sw_disarm. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
 	lv_obj_set_style_radius(ui->screen_sw_disarm, 10, LV_PART_MAIN|LV_STATE_DEFAULT);
