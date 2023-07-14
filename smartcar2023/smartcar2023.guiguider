@@ -479,15 +479,15 @@
 					"name": "btn_next",
 					"id": "l365bg92",
 					"type": "btn",
-					"left": 237,
-					"top": 119.5,
+					"left": 260,
+					"top": 119,
 					"visible": true,
 					"is_move_animation": false,
 					"desX": 0,
 					"desY": 0,
 					"path_type": "linear",
 					"duration": 1000,
-					"width": 70,
+					"width": 45,
 					"height": 25,
 					"default_style": false,
 					"scrollbar_mode": "OFF",
@@ -1132,20 +1132,6 @@
 							"bg_opa": 255
 						}
 					],
-					"undefined": [
-						{
-							"text": "0.001"
-						},
-						{
-							"text": "0.01"
-						},
-						{
-							"text": "0.1"
-						},
-						{
-							"text": "hello"
-						}
-					],
 					"event": [
 						{
 							"trigger": "value_changed",
@@ -1429,7 +1415,7 @@
 					"height": 32,
 					"default_style": false,
 					"scrollbar_mode": "OFF",
-					"text": "Kp=-0.000",
+					"text": "Kp=-4000.000",
 					"long_mode": "LV_LABEL_LONG_WRAP",
 					"style": [
 						{
@@ -1992,7 +1978,7 @@
 					"height": 42,
 					"default_style": false,
 					"scrollbar_mode": "OFF",
-					"text": "ROUND",
+					"text": "INITIAL",
 					"long_mode": "LV_LABEL_LONG_WRAP",
 					"style": [
 						{
@@ -2138,7 +2124,7 @@
 					"height": 42,
 					"default_style": false,
 					"scrollbar_mode": "OFF",
-					"text": "3.00 m/s",
+					"text": "N/A",
 					"long_mode": "LV_LABEL_LONG_WRAP",
 					"style": [
 						{
@@ -2284,7 +2270,7 @@
 					"height": 42,
 					"default_style": false,
 					"scrollbar_mode": "OFF",
-					"text": "2.98 m/s",
+					"text": "N/A",
 					"long_mode": "LV_LABEL_LONG_WRAP",
 					"style": [
 						{
