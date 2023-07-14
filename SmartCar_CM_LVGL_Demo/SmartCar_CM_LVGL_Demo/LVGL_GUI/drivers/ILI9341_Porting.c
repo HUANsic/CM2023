@@ -139,14 +139,14 @@ float* ui_Kd=&Kd;
 void ui_display_speed(float data){
     uint8_t temp[10];
     memset(temp,0,sizeof(temp));
-    sprintf(temp,"%.2f m/s",data);
+    sprintf(temp,"%.2f",data);
     lv_label_set_text(guider_ui.screen_label_speed, temp);
 }
 
 void ui_display_pid_goal(float data){
     uint8_t temp[10];
     memset(temp,0,sizeof(temp));
-    sprintf(temp,"%.2f m/s",data);
+    sprintf(temp,"%.2f",data);
     lv_label_set_text(guider_ui.screen_label_pidgoal, temp);
 }
 
