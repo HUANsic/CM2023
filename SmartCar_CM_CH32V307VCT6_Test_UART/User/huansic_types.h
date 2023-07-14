@@ -21,9 +21,10 @@ typedef enum {
 
 typedef struct {
 	TIM_TypeDef* timer;
-	uint16_t channel;
 	GPIO_TypeDef *port;
+	uint16_t channel;
 	uint16_t pin;
+	float offset;
 } Servo_TypeDef;
 
 typedef struct {

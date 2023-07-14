@@ -17,16 +17,16 @@ void ILI9341_SPI_Init(void)
 void ILI9341_SPI_Send(uint8_t SPI_Data)
 {
 	SPI_I2S_SendData(WSPI_INSTANCE, SPI_Data);
-	while((!(SPI3->STATR & 0x02))||(SPI3->STATR & 0x80));
+	while((!(WSPI_INSTANCE->STATR & 0x02))||(WSPI_INSTANCE->STATR & 0x80));
 }
 
 void ILI9341_SPI_SendData(uint8_t *SPI_Data, uint32_t len)
 {
 	for (uint32_t i = 0; i < len; i++){
-		while(!(WSPI_INSTANCE->STATR & (1 << 2)));		// wait for TXE
-		WSPI_INSTANCE->DATAR = SPI_Data[i];
+	    while((!(WSPI_INSTANCE->STATR & 0x02)));
+	    WSPI_INSTANCE->DATAR=SPI_Data[i];
 	}
-	while(WSPI_INSTANCE->STATR & (1 << 7));		// wait to BSY to clear
+	while((WSPI_INSTANCE->STATR & 0x80));
 }
 
 /* Send command (char) to LCD */

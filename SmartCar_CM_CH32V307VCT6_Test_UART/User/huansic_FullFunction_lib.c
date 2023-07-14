@@ -26,6 +26,8 @@ LED_TypeDef led1, led2, led3, led4;
 PID_TypeDef pid_controller;
 Screen_TypeDef screen;
 
+extern float output;
+
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
 
@@ -48,6 +50,7 @@ void huansic_Initialize(void) {
 	servo.channel = TIM_Channel_4;
 	servo.port = GPIOC;
 	servo.pin = GPIO_Pin_9;
+	servo.offset = 4;
 	encoder.counter = TIM3;
 	encoder.Aport = GPIOC;
 	encoder.Apin = GPIO_Pin_6;
@@ -66,9 +69,9 @@ void huansic_Initialize(void) {
 
 	// set up PID
 	pid_controller.timer = TIM9;
-	pid_controller.kp = 0.0004;
-	pid_controller.ki = 0.00005;
-	pid_controller.kd = 0.00005;
+	pid_controller.kp = 300;
+	pid_controller.ki = 40;
+	pid_controller.kd = 100;
 	pid_controller.goal = 0;
 
 	// check port availability
@@ -269,25 +272,39 @@ void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 		} else if (utemp16 == 0x07) {
 			huansic_LED_Set(&led4, 1);
 		}
-	} else if (utemp16 >= EDGE_CMD_ENABLE) {		// 0x3F80~0x3FF8 enables PID output
+	} else if (utemp16 >= EDGE_CMD_ENABLE) {		// 0x3F80~0x3FF7 enables motor output
 		huansic_Motor_Enable(&motor);
-	} else if (utemp16 >= EDGE_CMD_DISABLE) {		// 0x3F00~0x3F80 disables PID output
+	} else if (utemp16 >= EDGE_CMD_DISABLE) {		// 0x3F00~0x3F7F disables motor output
 		huansic_Motor_Disable(&motor);
-	} else if (utemp16 >= 0x0FC8) {		// 4040
+	} else if (utemp16 >= 0x1000) {		// 0x1000~0x3EFF
 		// reserved
-	} else if (utemp16 >= 0x0F00) {		// 3840
+	} else if (utemp16 >= 0x0FD0) {		// 4040; 0x0FD0~0x0FFF
+		stemp8 = (utemp16 << 4);	// keep 4 lowest bits as 2's complement
+		stemp8 >>= 4;				// shift with sign
+		if (utemp16 & 0x0030 == 0x0010) {		// modify kp
+			pid_controller.kp += stemp8;
+		} else if (utemp16 & 0x0030 == 0x0020) {	// modify ki
+			pid_controller.ki += stemp8;
+		} else if (utemp16 & 0x0030 == 0x0030) {	// modify kd
+			pid_controller.kd += stemp8;
+		} else {
+			// reserved (should not happen)
+		}
+	} else if (utemp16 > 0x0FC8) {		// 0x0FC8~0x0FCF
+		// reserved
+	} else if (utemp16 >= 0x0F00) {		// 3840; 0x0F00~0x0FC8
 		// 3840~4040 sets the servo angle
 		stemp8 = utemp16 - 3940;
 		huansic_Servo_Set(&servo, stemp8);
-	} else if (utemp16 >= 0x0E40) {		// 3648
+	} else if (utemp16 > 0x0E40) {		// 3648; 0x0E41~0x0EFF
 		// reserved
-	} else if (utemp16 >= 0x0800) {		// 2048
+	} else if (utemp16 >= 0x0800) {		// 2048; 0x0800~0x0E40
 		stemp16 = utemp16 - 0x0800;
 		stemp16 -= 800;
 		huansic_Motor_Set(&motor, stemp16);
-	} else if (utemp16 >= 0x0640) {		// 1600
+	} else if (utemp16 > 0x0640) {		// 1600; 0x0641~0x07FF
 		// reserved
-	} else {		// motor output is limited to below 1600 (-800 to 800)
+	} else {							// 0x0000~0x0640
 		tempf = utemp16;
 		tempf -= 800;
 		huansic_Motor_PID_SetGoal(&pid_controller, tempf);
@@ -311,14 +328,12 @@ void huansic_Edgeboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t le
 	// wait for TC to be set
 }
 
-void huansic_Edgeboard_IRQ(void) {
-	uint8_t utemp8;
-	utemp8 = (uint8_t) USART_ReceiveData(edgeboard.uart);
-	if (utemp8 & 0x80) {
-		edgeboard.highByte = utemp8 & 0x7F;		// clear the highest byte
+void huansic_Edgeboard_IRQ(Edge_TypeDef *edgeboard, uint8_t msg) {
+	if (msg & 0x80) {
+		edgeboard->highByte = msg & 0x7F;		// clear the highest byte
 	} else {
-		edgeboard.lowByte = utemp8;
-		huansic_Edgeboard_Interpret(&edgeboard);// interpret the message every time a lower byte is received
+		edgeboard->lowByte = msg;
+		huansic_Edgeboard_Interpret(edgeboard);	// interpret the message every time a lower byte is received
 	}
 }
 
@@ -514,7 +529,7 @@ void huansic_Motor_PID_Init(PID_TypeDef *pid_controller) {
 	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
 
 	// set up timer basic properties
-	TIM_TimeBaseInitStructure.TIM_Period = 200 - 1;// period (200ticks/cycle*100us/tick=20ms/cycle)
+	TIM_TimeBaseInitStructure.TIM_Period = 200 - 1;	// period (200ticks/cycle*100us/tick=20ms/cycle)
 	TIM_TimeBaseInitStructure.TIM_Prescaler = 14400 - 1;	// prescaler (1/144MHz*14400=100us/tick)
 	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -566,7 +581,9 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 	float foutput = pid_controller->kp * pid_controller->lastError
 			+ pid_controller->ki * pid_controller->sError
 			+ pid_controller->kd * dError;
+	foutput /= 1000000;
 	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
+	output = foutput;
 
 	huansic_Motor_Set(&motor, (int16_t) (foutput * 300));
 }
@@ -604,7 +621,7 @@ void huansic_Servo_Init(Servo_TypeDef *servo) {
 	// set up channel
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse = 150 - 1;		// center (1.5ms)
+	TIM_OCInitStructure.TIM_Pulse = (uint16_t) (servo->offset + 150) - 1;	// center (1.5ms+offset)
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 	// apply changes
 	switch (servo->channel) {
@@ -660,7 +677,7 @@ void huansic_Servo_Init(Servo_TypeDef *servo) {
 
 void huansic_Servo_Set(Servo_TypeDef *servo, int16_t angle) {
 	angle = (angle < -100) ? -100 : ((angle > 100) ? 100 : angle);
-	angle += 150 - 1;
+	angle += 150 - 1 + servo->offset;
 
 	// apply output
 	if (servo->channel == TIM_Channel_1) {
@@ -808,32 +825,36 @@ void TIM3_IRQHandler(void) {
 }
 
 void USART3_IRQHandler(void) {
-	if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
+	if (USART_GetITStatus(USART3, USART_IT_ORE)) {
+		USART_ReceiveData(USART3);
+		USART_ReceiveData(USART3);
+		USART_ClearFlag(USART3, USART_FLAG_ORE);
+	} else if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
+		huansic_Edgeboard_IRQ(&edgeboard, USART_ReceiveData(USART3));
 		USART_ClearFlag(USART3, USART_FLAG_RXNE);
-		huansic_Edgeboard_IRQ();
 	}
 }
 
 /*void EXTI9_5_IRQHandler(void) {
-	if (EXTI_GetITStatus(EXTI_Line5)) {
-		EXTI_ClearITPendingBit(EXTI_Line5); // Clear Flag
-		huansic_TouchScreen_IRQ();
-	}
-}*/
+ if (EXTI_GetITStatus(EXTI_Line5)) {
+ EXTI_ClearITPendingBit(EXTI_Line5); // Clear Flag
+ huansic_TouchScreen_IRQ();
+ }
+ }*/
 
-void ui_cmd_go(void){
+void ui_cmd_go(void) {
 	uint8_t data[] = { 0x42, 0x06, 0x06, 0x00, 0xFF, 0x4D };
 //	huansic_Edgeboard_SendString(&edgeboard, data, 6);
 	uint8_t i;
-		for (i = 0; i < 6; i++) {
-			while(!(USART3->STATR & (1 << 7)));
-			// wait for TXE to be set
-			USART_SendData(USART3, data[i]);
-		}
-		while(!(USART3->STATR & (1 << 6)));
-		// wait for TC to be set
+	for (i = 0; i < 6; i++) {
+		while(!(USART3->STATR & (1 << 7)));
+		// wait for TXE to be set
+		USART_SendData(USART3, data[i]);
+	}
+	while(!(USART3->STATR & (1 << 6)));
+	// wait for TC to be set
 }
 
-void ui_cmd_stop(void){
+void ui_cmd_stop(void) {
 
 }
