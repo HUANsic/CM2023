@@ -301,7 +301,7 @@ void huansic_Edgeboard_Interpret(Edge_TypeDef *edgeboard) {
 	} else if (utemp16 >= 0x0800) {		// 2048; 0x0800~0x0E40
 		stemp16 = utemp16 - 0x0800;
 		stemp16 -= 800;
-		huansic_Motor_Set(&motor, stemp16);
+		//huansic_Motor_Set(&motor, stemp16);
 	} else if (utemp16 > 0x0640) {		// 1600; 0x0641~0x07FF
 		// reserved
 	} else {							// 0x0000~0x0640
@@ -829,6 +829,7 @@ void USART3_IRQHandler(void) {
 		USART_ReceiveData(USART3);
 		USART_ReceiveData(USART3);
 		USART_ClearFlag(USART3, USART_FLAG_ORE);
+		USART_SendData(USART3, 0);
 	} else if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
 		huansic_Edgeboard_IRQ(&edgeboard, USART_ReceiveData(USART3));
 		USART_ClearFlag(USART3, USART_FLAG_RXNE);
