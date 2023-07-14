@@ -10,25 +10,6 @@
 #include "events_init.h"
 #include "custom.h"
 
-__attribute__((unused)) static void ta_screen_event_cb(lv_event_t *e)
-{
-
-	lv_event_code_t code = lv_event_get_code(e);
-	lv_obj_t *ta = lv_event_get_target(e);
-	lv_obj_t *kb = lv_event_get_user_data(e);
-	if (code == LV_EVENT_FOCUSED || code == LV_EVENT_CLICKED)
-	{
-		lv_keyboard_set_textarea(kb, ta);
-		lv_obj_move_foreground(kb);
-		lv_obj_clear_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-	if (code == LV_EVENT_CANCEL || code == LV_EVENT_DEFOCUSED)
-	{
-		lv_keyboard_set_textarea(kb, NULL);
-		lv_obj_move_background(kb);
-		lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-	}
-}
 
 void setup_scr_screen(lv_ui *ui){
 
