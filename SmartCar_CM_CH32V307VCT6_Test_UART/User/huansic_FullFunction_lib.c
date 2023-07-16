@@ -26,8 +26,6 @@ LED_TypeDef led1, led2, led3, led4;
 PID_TypeDef pid_controller;
 Screen_TypeDef screen;
 
-extern float output;
-
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
 
@@ -69,9 +67,9 @@ void huansic_Initialize(void) {
 
 	// set up PID
 	pid_controller.timer = TIM9;
-	pid_controller.kp = 300;
-	pid_controller.ki = 40;
-	pid_controller.kd = 100;
+	pid_controller.kp = 30;
+	pid_controller.ki = 0.4;
+	pid_controller.kd = 5;
 	pid_controller.goal = 0;
 
 	// check port availability
@@ -127,66 +125,6 @@ void huansic_Initialize(void) {
 
 	// initialize PID timer
 	huansic_Motor_PID_Init(&pid_controller);
-}
-
-void huansic_Clocks_Init(void) {
-	// disable peripheral clocks
-	uint32_t rcc_apb1pcenr = RCC->APB1PCENR;
-	RCC->APB1PCENR = 0;
-	uint32_t rcc_apb2pcenr = RCC->APB2PCENR;
-	RCC->APB2PCENR = 0;
-
-	// make sure HSI is on
-	if (!(RCC->CTLR & (1 << 1))) {	// HSIRDY
-		RCC->CTLR |= (1 << 0);		// HSION(1)
-		while(!(RCC->CTLR & (1 << 1)));
-	}
-
-	// switch to HSI for now
-	RCC->CFGR0 &= ~(0x03L << 0);	// SW(00)
-
-	// if PLL is on, turn it off
-	if (RCC->CTLR & (1 << 25)) {		// PLLRDY
-		RCC->CTLR &= ~(1 << 24);	// PLLON(0)
-		while(RCC->CTLR & (1 << 25));
-	}
-
-	// enable HSE
-	RCC->CTLR |= (1 << 16);		// HSEON
-
-	// configure the path before the system clock MUX
-	RCC->CFGR2 |= (1 << 16);		// PREDIV1SRC (HSE)
-	RCC->CFGR2 &= ~(0x0FL << 0);	// PREDIV1 (/1)
-	RCC->CFGR0 |= (1 << 16);		// PLLSRC (HSE)
-	RCC->CFGR0 |= (0x0F << 18);		// PLLMUL (x18)
-
-	// wait for HSE to stabilize
-	while(!(RCC->CTLR & (1 << 17)));
-	// HSERDY
-
-	// enable PLL
-	RCC->CTLR |= (1 << 24);		// PLLON(1)
-
-	// wait for PLL to stabilize
-	while(!(RCC->CTLR & (1 << 25)));
-	// PLLRDY
-
-	// configure the path before peripheral clocks
-	// AHB prescaler (/1)
-	RCC->CFGR0 &= ~(0x0FL << 4);		// HPRE(0)
-	// APB1 prescaler (/1)
-	RCC->CFGR0 &= ~(0x07L << 8);		// PPRE1(0)
-	// APB1 prescaler (/1)
-	RCC->CFGR0 &= ~(0x07L << 11);		// PPRE2(0)
-	// USB prescaler (/3)
-	RCC->CFGR0 = (RCC->CFGR0 & ~(0x03L << 22)) | (1 << 23);
-
-	// switch the system clock source to PLL
-	RCC->CFGR0 = (RCC->CFGR0 & (~(0x03L << 0))) | (0x02 << 0);		// SW (10)
-
-	// enable peripheral clocks
-	RCC->APB1PCENR = rcc_apb1pcenr;
-	RCC->APB2PCENR = rcc_apb2pcenr;
 }
 
 void huansic_Edgeboard_Init(Edge_TypeDef *edgeboard) {
@@ -329,6 +267,9 @@ void huansic_Edgeboard_SendString(Edge_TypeDef *edgeboard, char *str, uint8_t le
 }
 
 void huansic_Edgeboard_IRQ(Edge_TypeDef *edgeboard, uint8_t msg) {
+	uint32_t tick = SysTick->CNT;
+	edgeboard->lastReceivedInterval = tick - edgeboard->lastReceived;
+	edgeboard->lastReceived = tick;
 	if (msg & 0x80) {
 		edgeboard->highByte = msg & 0x7F;		// clear the highest byte
 	} else {
@@ -581,9 +522,8 @@ void huansic_Motor_PID_IRQ(PID_TypeDef *pid_controller) {
 	float foutput = pid_controller->kp * pid_controller->lastError
 			+ pid_controller->ki * pid_controller->sError
 			+ pid_controller->kd * dError;
-	foutput /= 1000000;
+	foutput /= 10000;
 	foutput = foutput > 1.0 ? 1.0 : (foutput < -1.0 ? -1.0 : foutput);
-	output = foutput;
 
 	huansic_Motor_Set(&motor, (int16_t) (foutput * 300));
 }
@@ -806,14 +746,13 @@ void huansic_TouchScreen_IRQ(void) {
 void TIM9_UP_IRQHandler(void) {
 	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
 	huansic_Motor_PID_IRQ(&pid_controller);
+	// TODO split task
 	lv_timer_handler();
-	huansic_LED_Set(&led4, huansic_LED_Get(&led4));
 }
 
 void TIM3_IRQHandler(void) {
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update)) {
 		TIM_ClearFlag(TIM3, TIM_FLAG_Update);
-		huansic_LED_Set(&led2, 1);
 		if (encoder.counter->CTLR1 & TIM_DIR) {
 			encoder.overflow--;
 		} else {
@@ -829,7 +768,6 @@ void USART3_IRQHandler(void) {
 		USART_ReceiveData(USART3);
 		USART_ReceiveData(USART3);
 		USART_ClearFlag(USART3, USART_FLAG_ORE);
-		USART_SendData(USART3, 0);
 	} else if (USART_GetITStatus(USART3, USART_IT_RXNE)) {
 		huansic_Edgeboard_IRQ(&edgeboard, USART_ReceiveData(USART3));
 		USART_ClearFlag(USART3, USART_FLAG_RXNE);
@@ -845,7 +783,6 @@ void USART3_IRQHandler(void) {
 
 void ui_cmd_go(void) {
 	uint8_t data[] = { 0x42, 0x06, 0x06, 0x00, 0xFF, 0x4D };
-//	huansic_Edgeboard_SendString(&edgeboard, data, 6);
 	uint8_t i;
 	for (i = 0; i < 6; i++) {
 		while(!(USART3->STATR & (1 << 7)));
@@ -857,5 +794,5 @@ void ui_cmd_go(void) {
 }
 
 void ui_cmd_stop(void) {
-
+	huansic_Motor_PID_SetGoal(&pid_controller, 0);
 }

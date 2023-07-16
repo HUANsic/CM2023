@@ -39,6 +39,8 @@ typedef struct {
 	GPIO_TypeDef *txport, *rxport;
 	uint16_t txpin, rxpin;
 	uint8_t highByte, lowByte;
+	uint16_t lastReceivedInterval;
+	uint32_t lastReceived;
 } Edge_TypeDef;
 
 typedef struct {

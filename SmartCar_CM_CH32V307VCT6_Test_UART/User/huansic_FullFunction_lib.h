@@ -14,8 +14,6 @@
 
 void huansic_Initialize(void);
 
-void huansic_Clocks_Init(void);
-
 void huansic_Edgeboard_Init(Edge_TypeDef *edgeboard);
 
 void huansic_Edgeboard_Send(Edge_TypeDef *edgeboard, char ch);

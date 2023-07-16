@@ -63,7 +63,7 @@ int main(void)
 		ui_display_pid_goal(output);
 //		void ui_display_step_counter(uint8_t* data);
 
-		Delay_Ms(500);
+		Delay_Ms(300);
 	}
 }
 
