@@ -48,7 +48,7 @@ void huansic_Initialize(void) {
 	servo.channel = TIM_Channel_4;
 	servo.port = GPIOC;
 	servo.pin = GPIO_Pin_9;
-	servo.offset = 8;
+	servo.offset = 2;
 	encoder.counter = TIM3;
 	encoder.Aport = GPIOC;
 	encoder.Apin = GPIO_Pin_6;
