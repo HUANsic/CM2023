@@ -615,7 +615,7 @@ void setup_scr_screen(lv_ui *ui){
 	//Write codes screen_btn_add
 	ui->screen_btn_add = lv_btn_create(ui->screen);
 	lv_obj_set_pos(ui->screen_btn_add, 137, 152);
-	lv_obj_set_size(ui->screen_btn_add, 75, 25);
+	lv_obj_set_size(ui->screen_btn_add, 50, 25);
 	lv_obj_set_scrollbar_mode(ui->screen_btn_add, LV_SCROLLBAR_MODE_OFF);
 
 	//Set style for screen_btn_add. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -897,8 +897,8 @@ void setup_scr_screen(lv_ui *ui){
 
 	//Write codes screen_btn_sub
 	ui->screen_btn_sub = lv_btn_create(ui->screen);
-	lv_obj_set_pos(ui->screen_btn_sub, 232, 152);
-	lv_obj_set_size(ui->screen_btn_sub, 75, 25);
+	lv_obj_set_pos(ui->screen_btn_sub, 197, 152);
+	lv_obj_set_size(ui->screen_btn_sub, 50, 25);
 	lv_obj_set_scrollbar_mode(ui->screen_btn_sub, LV_SCROLLBAR_MODE_OFF);
 
 	//Set style for screen_btn_sub. Part: LV_PART_MAIN, State: LV_STATE_DEFAULT
@@ -1222,6 +1222,63 @@ void setup_scr_screen(lv_ui *ui){
 	lv_obj_set_style_pad_right(ui->screen_label_10, 0, LV_PART_MAIN|LV_STATE_DISABLED);
 	lv_obj_set_style_pad_top(ui->screen_label_10, 8, LV_PART_MAIN|LV_STATE_DISABLED);
 	lv_obj_set_style_pad_bottom(ui->screen_label_10, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+
+	//Write codes screen_btn_save
+	ui->screen_btn_save = lv_btn_create(ui->screen);
+	ui->screen_btn_save_label = lv_label_create(ui->screen_btn_save);
+	lv_label_set_text(ui->screen_btn_save_label, "SAVE");
+	lv_label_set_long_mode(ui->screen_btn_save_label, LV_LABEL_LONG_WRAP);
+	lv_obj_align(ui->screen_btn_save_label, LV_ALIGN_CENTER, 0, 0);
+	lv_obj_set_style_pad_all(ui->screen_btn_save, 0, LV_STATE_DEFAULT);
+	lv_obj_set_pos(ui->screen_btn_save, 255, 152);
+	lv_obj_set_size(ui->screen_btn_save, 50, 25);
+	lv_obj_set_scrollbar_mode(ui->screen_btn_save, LV_SCROLLBAR_MODE_OFF);
+
+	//Write style for screen_btn_save, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+	lv_obj_set_style_bg_opa(ui->screen_btn_save, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_bg_color(ui->screen_btn_save, lv_color_hex(0x343434), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_border_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_radius(ui->screen_btn_save, 5, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_shadow_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_color(ui->screen_btn_save, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_font(ui->screen_btn_save, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_DEFAULT);
+	lv_obj_set_style_text_align(ui->screen_btn_save, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN|LV_STATE_DEFAULT);
+
+	//Write style for screen_btn_save, Part: LV_PART_MAIN, State: LV_STATE_FOCUSED.
+	lv_obj_set_style_bg_opa(ui->screen_btn_save, 255, LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_bg_color(ui->screen_btn_save, lv_color_hex(0x35414a), LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_border_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_radius(ui->screen_btn_save, 5, LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_shadow_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_text_color(ui->screen_btn_save, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_FOCUSED);
+	lv_obj_set_style_text_font(ui->screen_btn_save, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_FOCUSED);
+
+	//Write style for screen_btn_save, Part: LV_PART_MAIN, State: LV_STATE_PRESSED.
+	lv_obj_set_style_bg_opa(ui->screen_btn_save, 255, LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_bg_color(ui->screen_btn_save, lv_color_hex(0x4f4f4f), LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_border_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_radius(ui->screen_btn_save, 5, LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_shadow_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_text_color(ui->screen_btn_save, lv_color_hex(0xffffff), LV_PART_MAIN|LV_STATE_PRESSED);
+	lv_obj_set_style_text_font(ui->screen_btn_save, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_PRESSED);
+
+	//Write style for screen_btn_save, Part: LV_PART_MAIN, State: LV_STATE_CHECKED.
+	lv_obj_set_style_bg_opa(ui->screen_btn_save, 255, LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_bg_color(ui->screen_btn_save, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_border_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_radius(ui->screen_btn_save, 5, LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_shadow_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_text_color(ui->screen_btn_save, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_CHECKED);
+	lv_obj_set_style_text_font(ui->screen_btn_save, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_CHECKED);
+
+	//Write style for screen_btn_save, Part: LV_PART_MAIN, State: LV_STATE_DISABLED.
+	lv_obj_set_style_bg_opa(ui->screen_btn_save, 255, LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_bg_color(ui->screen_btn_save, lv_color_hex(0x2195f6), LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_border_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_radius(ui->screen_btn_save, 5, LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_shadow_width(ui->screen_btn_save, 0, LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_text_color(ui->screen_btn_save, lv_color_hex(0x000000), LV_PART_MAIN|LV_STATE_DISABLED);
+	lv_obj_set_style_text_font(ui->screen_btn_save, &lv_font_Alatsi_Regular_14, LV_PART_MAIN|LV_STATE_DISABLED);
 
 	//Init events for screen
 	events_init_screen(ui);

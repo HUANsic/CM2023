@@ -32,6 +32,8 @@ void ui_display_step_counter(uint8_t* data);
 void ui_cmd_go(void);
 /* 紧急停车 */
 void ui_cmd_stop(void);
+/* 保存PID参数 */
+void ui_cmd_pid_save(void);
 
 /* TODO:需要定义的指针。  */
 extern float* ui_Kp;
