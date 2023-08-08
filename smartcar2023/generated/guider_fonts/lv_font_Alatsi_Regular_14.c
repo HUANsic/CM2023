@@ -1,12 +1,15 @@
 /*
  * Copyright 2023 NXP
- * SPDX-License-Identifier: MIT
- * The auto-generated can only be used on NXP devices
+ * NXP Confidential and Proprietary. This software is owned or controlled by NXP and may only be used strictly in
+ * accordance with the applicable license terms. By expressly accepting such terms or by downloading, installing,
+ * activating and/or otherwise using the software, you are agreeing that you have read, and that you agree to
+ * comply with and are bound by, such license terms.  If you do not agree to be bound by the applicable license
+ * terms, then you may not retain, install, activate or otherwise use the software.
  */
 /*******************************************************************************
  * Size: 14 px
  * Bpp: 4
- * Opts: 
+ * Opts: --user-data-dir=C:\Users\hanyuan\AppData\Roaming\gui-guider --app-path=D:\GUI-Guider-1.6.0-GA\resources\app.asar --no-sandbox --no-zygote --lang=zh-CN --device-scale-factor=1.5 --num-raster-threads=4 --enable-main-frame-before-activation --renderer-client-id=5 --time-ticks-at-unix-epoch=-1691248385290383 --launch-time-ticks=261663705952 --mojo-platform-channel-handle=2948 --field-trial-handle=1704,i,2051722729571269381,9472696613404094103,131072 --disable-features=SpareRendererForSitePerProcess,WinRetrieveSuggestionsOnlyOnDemand /prefetch:1
  ******************************************************************************/
 
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
@@ -1912,7 +1915,7 @@ lv_font_t lv_font_Alatsi_Regular_14 = {
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
     .line_height = 14,          /*The maximum line height required by the font  default: (f.src.ascent - f.src.descent)*/
-    .base_line = 4,             /*Baseline measured from the bottom of the line*/
+    .base_line = 0,                          /*Baseline measured from the bottom of the line*/
 #if !(LVGL_VERSION_MAJOR == 6 && LVGL_VERSION_MINOR == 0)
     .subpx = LV_FONT_SUBPX_NONE,
 #endif

@@ -54,3 +54,9 @@
 # Startup files
 *.s
 *.S
+
+# Gui Guider Files
+smartcar2023/generated
+smartcar2023/import
+smartcar2023/lvgl
+smartcar2023/lvgl-simulator

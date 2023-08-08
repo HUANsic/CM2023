@@ -272,28 +272,28 @@
 #define LV_BIG_ENDIAN_SYSTEM 0
 
 /*Define a custom attribute to `lv_tick_inc` function*/
-#define LV_ATTRIBUTE_TICK_INC
+#define LV_ATTRIBUTE_TICK_INC 
 
 /*Define a custom attribute to `lv_timer_handler` function*/
-#define LV_ATTRIBUTE_TIMER_HANDLER
+#define LV_ATTRIBUTE_TIMER_HANDLER 
 
 /*Define a custom attribute to `lv_disp_flush_ready` function*/
-#define LV_ATTRIBUTE_FLUSH_READY
+#define LV_ATTRIBUTE_FLUSH_READY 
 
 #ifndef LV_ATTRIBUTE_LARGE_CONST
 /*Attribute to mark large constant arrays for example font's bitmaps*/
-#define LV_ATTRIBUTE_LARGE_CONST
+#define LV_ATTRIBUTE_LARGE_CONST 
 #endif    /* LV_ATTRIBUTE_LARGE_CONST */
 
 /*Compiler prefix for a big array declaration in RAM*/
-#define LV_ATTRIBUTE_LARGE_RAM_ARRAY
+#define LV_ATTRIBUTE_LARGE_RAM_ARRAY 
 
 /*Place performance critical functions into a faster memory (e.g RAM)*/
-#define LV_ATTRIBUTE_FAST_MEM
+#define LV_ATTRIBUTE_FAST_MEM 
 
 /*Prefix variables that are used in GPU accelerated operations,
  often these need to be placed in RAM sections that are DMA accessible*/
-#define LV_ATTRIBUTE_DMA
+#define LV_ATTRIBUTE_DMA 
 
 /*Export integer constant to binding. This macro is used with constants in the form of LV_<CONST> that
  *should also appear on LVGL binding API such as Micropython.*/
@@ -346,7 +346,7 @@
 /*Optionally declare custom fonts here.
  *You can use these fonts as default font too and they will be available globally.
  *E.g. #define LV_FONT_CUSTOM_DECLARE   LV_FONT_DECLARE(my_font_1) LV_FONT_DECLARE(my_font_2)*/
-#define LV_FONT_CUSTOM_DECLARE
+#define LV_FONT_CUSTOM_DECLARE 
 
 /*Always set a default font*/
 #define LV_FONT_DEFAULT &lv_font_montserrat_14
@@ -434,7 +434,7 @@
 
 #define LV_USE_DROPDOWN 1
 
-#define LV_USE_IMG 0
+#define LV_USE_IMG 1
 
 #define LV_USE_LABEL 1
 #if LV_USE_LABEL
@@ -707,6 +707,10 @@
 #define LV_IME_PINYIN_K9_CAND_TEXT_NUM 3
 #endif    /* LV_IME_PINYIN_USE_K9_MODE */
 #endif    /* LV_USE_IME_PINYIN */
+/*Enable the text progress bar*/
+#define LV_USE_TEXTPROGRESS 0
+/*Enable the barcode*/
+#define LV_USE_BARCODE 0
 
 #define LV_USE_GUIDER_SIMULATOR 0
 #include "lv_conf_ext.h"
