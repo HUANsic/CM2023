@@ -743,6 +743,72 @@ void huansic_TouchScreen_IRQ(void) {
 	huansic_Edgeboard_SendString(&edgeboard, data, 6);
 }
 
+#ifdef USE_SW_TWI
+void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
+	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+	uint32_t temp32_2 = 0;
+
+	temp32_2 |= huansic_getAPB2_fromGPIO(eeprom->twi->sda_port);
+	temp32_2 |= huansic_getAPB2_fromGPIO(eeprom->twi->scl_port);
+	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Pin = eeprom->twi->scl_pin;
+	GPIO_Init(eeprom->twi->scl_port, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = eeprom->twi->sda_pin;
+	GPIO_Init(eeprom->twi->sda_port, &GPIO_InitStructure);
+}
+
+uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len){
+	address &= 0x07FF;				// constrain it to 11 bits
+	uint8_t phys_address = eeprom->address & (0x78);	// clear highest and 3 lowest bits
+	phys_address |= address >> 8;		// OR with the highest 3 bits of address
+	return huansic_I2C_read(eeprom->twi, phys_address, address & 0x0FF, buffer, len);
+}
+
+uint8_t huansic_EEPROM_writeBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len){
+	address &= 0x07FF;				// constrain it to 11 bits
+	uint8_t phys_address = eeprom->address & (0x78);	// clear highest and 3 lowest bits
+	phys_address |= address >> 8;		// OR with the highest 3 bits of address
+	return huansic_I2C_write(eeprom->twi, phys_address, address & 0x0FF, buffer, len);
+}
+
+#else
+void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
+	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
+	I2C_InitTypeDef I2C_InitTSturcture = { 0 };
+	uint32_t temp32_1 = 0, temp32_2 = 0;
+
+	temp32_1 |= huansic_getAPB1_fromI2C(eeprom->twi);
+	temp32_2 |= huansic_getAPB2_fromGPIO(eeprom->sda_port);
+	temp32_2 |= huansic_getAPB2_fromGPIO(eeprom->scl_port);
+	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
+	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_Pin = eeprom->scl_pin;
+	GPIO_Init(eeprom->scl_port, &GPIO_InitStructure);
+
+	GPIO_InitStructure.GPIO_Pin = eeprom->sda_pin;
+	GPIO_Init(eeprom->sda_port, &GPIO_InitStructure);
+
+	I2C_InitTSturcture.I2C_ClockSpeed = eeprom->baud;
+	I2C_InitTSturcture.I2C_Mode = I2C_Mode_I2C;
+	I2C_InitTSturcture.I2C_DutyCycle = I2C_DutyCycle_2;
+	I2C_InitTSturcture.I2C_OwnAddress1 = 0x00;
+	I2C_InitTSturcture.I2C_Ack = I2C_Ack_Enable;
+	I2C_InitTSturcture.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+	I2C_Init(eeprom->twi, &I2C_InitTSturcture);
+
+	I2C_Cmd(eeprom->twi, ENABLE);
+
+	I2C_AcknowledgeConfig(eeprom->twi, ENABLE);
+}
+#endif
+
 void TIM9_UP_IRQHandler(void) {
 	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
 	huansic_Motor_PID_IRQ(&pid_controller);

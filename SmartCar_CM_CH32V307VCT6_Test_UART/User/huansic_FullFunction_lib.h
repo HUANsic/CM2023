@@ -58,5 +58,10 @@ void huansic_Screen_Init(Screen_TypeDef *screen);
 
 void huansic_TouchScreen_IRQ(void);
 
+void huansic_EEPROM_init(EEPROM_TypeDef *eeprom);
+
+uint8_t huansic_EEPROM_writeBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len);
+
+uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len);
 
 #endif /* USER_HUANSIC_FULLFUNCTION_LIB_H_ */

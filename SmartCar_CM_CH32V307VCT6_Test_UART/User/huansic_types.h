@@ -10,6 +10,8 @@
 
 #include "ch32v30x.h"
 
+#define USE_SW_TWI
+
 typedef enum {
 	HUAN_LED_1 = 0,
 	HUAN_LED_2,
@@ -18,6 +20,19 @@ typedef enum {
 	HUAN_LED_5,
 	HUAN_LED_6
 } LED_Index;
+
+typedef enum {
+	AT24C01_1K,
+	AT24C02_2K,
+	AT24C04_4K,
+	AT24C08_8K,
+	AT24C16_16K
+} EEPROM_Device;
+
+typedef struct {
+	GPIO_TypeDef *sda_port, *scl_port;
+	uint16_t sda_pin, scl_pin;
+} HUAN_I2CM_TypeDef;
 
 typedef struct {
 	TIM_TypeDef* timer;
@@ -73,5 +88,19 @@ typedef struct {
 	uint16_t t_mosi_pin, t_miso_pin, t_cs_pin, t_sck_pin;
 	uint16_t reset_pin, dc_pin, int_pin;
 } Screen_TypeDef;
+
+typedef struct {
+#ifdef USE_SW_TWI
+	HUAN_I2CM_TypeDef *twi;
+#else
+	I2C_TypeDef *twi;
+	GPIO_TypeDef *sda_port, *scl_port;
+	uint16_t sda_pin, scl_pin;
+	uint32_t baud;
+	uint8_t locked;
+#endif
+	EEPROM_Device device;
+	uint8_t address;
+} EEPROM_TypeDef;
 
 #endif /* USER_HUANSIC_TYPES_H_ */

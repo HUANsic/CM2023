@@ -67,83 +67,6 @@ HUAN_NoMapping,				// 0
 		GPIO_FullRemap_USART8		// 16
 		};
 
-// 			[TIMx][Option][CHx]
-/*
- *
- uint8_t huansic_remap_tim_table[][][] = {
- // TIM1
- {
- { 1, 	PAx | Px8, 	PAx | Px9, 	PAx | Px10, PAx | Px11}, 	// option 1
- { 2, 	PAx | Px8, 	PAx | Px9, 	PAx | Px10, PAx | Px11}, 	// option 2
- { 3,	PEx | Px9, 	PEx | Px11, PEx | Px13, PEx | Px14}, 	// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM2
- {
- { 1, 	PAx | Px0, 	PAx | Px1, 	PAx | Px2, 	PAx | Px3}, 	// option 1
- { 4,	PAx | Px15,	PBx | Px3, 	PAx | Px2, 	PAx | Px3}, 	// option 2
- { 5,	PAx | Px0, 	PAx | Px1, 	PBx | Px10, PBx | Px11}, 	// option 3
- { 6,	PAx | Px15,	PBx | Px3, 	PBx | Px10, PBx | Px11} 	// option 4
- },
- // TIM3
- {
- { 1,	PAx | Px6, 	PAx | Px7, 	PBx | Px0, 	PBx | Px1}, 	// option 1
- { 7,	PBx | Px4, 	PBx | Px5, 	PBx | Px0, 	PBx | Px1}, 	// option 2
- { 8,	PCx | Px6, 	PCx | Px7, 	PCx | Px8, 	PCx | Px9}, 	// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM4
- {
- { 1,	PBx | Px6,	PBx | Px7, 	PBx | Px8, 	PBx | Px9}, 	// option 1
- { 9,	PDx | Px12,	PDx | Px13,	PDx | Px14,	PDx | Px15}, 	// option 2
- { 0,	0,			0,			0,			0}, 			// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM5
- {
- { 1,	PAx | Px0, 	PAx | Px1, 	PAx | Px2, 	PAx | Px3}, 	// option 1
- { 0,	0,			0,			0,			0}, 			// option 2
- { 0,	0,			0,			0,			0}, 			// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM6 (no output)
- {
- { 0,	0,			0,			0,			0}, 			// option 1
- { 0,	0,			0,			0,			0}, 			// option 2
- { 0,	0,			0,			0,			0}, 			// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM7 (no output)
- {
- { 0,	0,			0,			0,			0}, 			// option 1
- { 0,	0,			0,			0,			0}, 			// option 2
- { 0,	0,			0,			0,			0}, 			// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM8
- {
- { 1,	PCx | Px6, 	PCx | Px7, 	PCx | Px8, 	PCx | Px9}, 	// option 1
- { 10,	PBx | Px6, 	PBx | Px7, 	PBx | Px8, 	PCx | Px13}, 	// option 2
- { 0,	0,			0,			0,			0}, 			// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM9
- {
- { 1,	PAx | Px2, 	PAx | Px3, 	PAx | Px4, 	PCx | Px4}, 	// option 1
- { 11,	PAx | Px2, 	PAx | Px3, 	PAx | Px4, 	PCx | Px14}, 	// option 2
- { 12,	PDx | Px9,	PDx | Px11,	PDx | Px13,	PDx | Px15}, 	// option 3
- { 0,	0,			0,			0,			0}	 			// option 4
- },
- // TIM10
- {
- { 1,	PBx | Px8,	PBx | Px9,	PCx | Px3,	PCx | Px11}, 	// option 1
- { 13,	PBx | Px3,	PBx | Px4,	PBx | Px5,	PCx | Px15}, 	// option 2
- { 14,	PDx | Px1,	PDx | Px3,	PDx | Px5,	PDx | Px7}, 	// option 3
- { 0,	0,			0,			0,			0} 				// option 4
- }
- };
- *
- */
 uint8_t huansic_remap_tim_table[][4][5] = {
 		// 0 (leave empty)
 		{
@@ -290,6 +213,71 @@ uint8_t huansic_remap_uart_table[][4][3] = {
 				{ 0, 0, 0 }						// option 4
 		}
 };
+
+uint32_t us_overflow;
+
+void TIM10_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// us timer
+
+void huansic_us_Init(void) {
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseInitStructure = { 0 };
+	NVIC_InitTypeDef NVIC_InitStructure = { 0 };
+	uint32_t temp32_1 = 0, temp32_2 = 0;
+	IRQn_Type irq;
+
+	// enable timer
+	temp32_1 |= huansic_getAPB1_fromTIM(HUAN_US_TIMER);
+	temp32_2 |= huansic_getAPB2_fromTIM(HUAN_US_TIMER);
+	irq = huansic_getIRQ_fromTIM(HUAN_US_TIMER);
+	// apply changes
+	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
+	RCC_APB1PeriphClockCmd(temp32_1, ENABLE);
+
+	// set up timer basic properties
+	TIM_TimeBaseInitStructure.TIM_Period = 65535;	// period
+	TIM_TimeBaseInitStructure.TIM_Prescaler = 144 - 1;	// prescaler
+	TIM_TimeBaseInitStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseInitStructure.TIM_CounterMode = TIM_CounterMode_Up;
+	// apply changes
+	TIM_TimeBaseInit(HUAN_US_TIMER, &TIM_TimeBaseInitStructure);
+
+	// configure interrupt (enable update)
+	TIM_ITConfig(HUAN_US_TIMER, TIM_IT_Update, ENABLE);
+
+	// set up NVIC
+	NVIC_InitStructure.NVIC_IRQChannel = irq;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;	// highest priority
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;			// 2nd highest sub-priority
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	// apply changes
+	NVIC_Init(&NVIC_InitStructure);
+
+	// start the timer
+	TIM_Cmd(HUAN_US_TIMER, ENABLE);
+
+	us_overflow = 0;
+}
+
+void huansic_us_delay(uint32_t duration) {
+	uint32_t startOVF = us_overflow, startUS = HUAN_US_TIMER->CNT;
+	while(((us_overflow - startOVF) << 16) + HUAN_US_TIMER->CNT - startUS < duration) {
+		__asm__("nop");
+		__asm__("nop");
+		__asm__("nop");
+		__asm__("nop");			// maybe chill a bit during waiting
+	}
+}
+
+float huansic_us_get() {
+	float result = us_overflow;
+	result *= 65536;
+	result += HUAN_US_TIMER->CNT;
+	return result;
+}
+
+void TIM10_UP_IRQHandler(void) {
+	us_overflow++;
+	TIM_ClearFlag(TIM10, TIM_FLAG_Update);
+}
 
 uint32_t huansic_findRemap_servo(Servo_TypeDef *servo) {
 	uint8_t timer, channel, portpin = 0, i;
@@ -996,6 +984,21 @@ uint32_t huansic_findRemap_encoder(Encoder_TypeDef *encoder) {
 	return HUAN_NoMapping;
 }
 
+/*
+ uint32_t huansic_findRemap_eeprom(EEPROM_TypeDef *eeprom) {
+ if (eeprom->sda_port != GPIOB || eeprom->scl_port != GPIOB)
+ return HUAN_NoMapping;
+ if (eeprom->sda_pin == GPIO_Pin_7 && eeprom->scl_pin == GPIO_Pin_6)
+ return HUAN_DefaultMapping;
+ else if (eeprom->sda_pin == GPIO_Pin_11 && eeprom->scl_pin == GPIO_Pin_10)
+ return HUAN_DefaultMapping;
+ else if (eeprom->sda_pin == GPIO_Pin_9 && eeprom->scl_pin == GPIO_Pin_8)
+ return GPIO_Remap_I2C1;
+ else
+ return HUAN_NoMapping;
+ }
+ */
+
 uint32_t huansic_getAPB2_fromGPIO(GPIO_TypeDef *gpio) {
 	if (gpio == GPIOA)
 		return RCC_APB2Periph_GPIOA;
@@ -1041,30 +1044,6 @@ uint32_t huansic_getAPB2_fromTIM(TIM_TypeDef *tim) {
 		return 0;
 }
 
-IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart) {
-	if (usart == USART1)
-		return USART1_IRQn;
-	else if (usart == USART2)
-		return USART2_IRQn;
-	else if (usart == USART3)
-		return USART3_IRQn;
-	else if (usart == UART4)
-		return UART4_IRQn;
-	else if (usart == UART5)
-		return UART5_IRQn;
-	else if (usart == UART6)
-		return UART6_IRQn;
-	else if (usart == UART7)
-		return UART7_IRQn;
-	else if (usart == UART8)
-		return UART8_IRQn;
-	else {
-		while (1) {
-			Delay_Ms(1000);
-		}
-	}
-}
-
 uint32_t huansic_getAPB1_fromUART(USART_TypeDef *usart) {
 	if (usart == USART2)
 		return RCC_APB1Periph_USART2;
@@ -1089,6 +1068,55 @@ uint32_t huansic_getAPB2_fromUART(USART_TypeDef *usart) {
 		return RCC_APB2Periph_USART1;
 	else
 		return 0;
+}
+
+uint32_t huansic_getAPB1_fromSPI(SPI_TypeDef *spi) {
+	if (spi == SPI2)
+		return RCC_APB1Periph_SPI2;
+	else if (spi == SPI3)
+		return RCC_APB1Periph_SPI3;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB2_fromSPI(SPI_TypeDef *spi) {
+	if (spi == SPI1)
+		return RCC_APB2Periph_SPI1;
+	else
+		return 0;
+}
+
+uint32_t huansic_getAPB1_fromI2C(I2C_TypeDef *twi) {
+	if (twi == I2C1)
+		return RCC_APB1Periph_I2C1;
+	else if (twi == I2C2)
+		return RCC_APB1Periph_I2C2;
+	else
+		return 0;
+}
+
+IRQn_Type huansic_getIRQ_fromUART(USART_TypeDef *usart) {
+	if (usart == USART1)
+		return USART1_IRQn;
+	else if (usart == USART2)
+		return USART2_IRQn;
+	else if (usart == USART3)
+		return USART3_IRQn;
+	else if (usart == UART4)
+		return UART4_IRQn;
+	else if (usart == UART5)
+		return UART5_IRQn;
+	else if (usart == UART6)
+		return UART6_IRQn;
+	else if (usart == UART7)
+		return UART7_IRQn;
+	else if (usart == UART8)
+		return UART8_IRQn;
+	else {
+		while (1) {
+			Delay_Ms(1000);
+		}
+	}
 }
 
 IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
@@ -1118,3 +1146,190 @@ IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
 		}
 	}
 }
+
+#ifdef USE_SW_TWI
+
+#define SDA_STATE(twi) GPIO_ReadInputDataBit(twi->sda_port, twi->sda_pin)
+#define SCL_STATE(twi) GPIO_ReadInputDataBit(twi->scl_port, twi->scl_pin)
+#define SDA_TO(twi, x) GPIO_WriteBit(twi->sda_port, twi->sda_pin, x)
+#define SCL_TO(twi, x) GPIO_WriteBit(twi->scl_port, twi->sda_pin, x)
+#define SDA_HIGH(twi) SDA_TO(twi, 1)
+#define SDA_LOW(twi) SDA_TO(twi, 0)
+#define SCL_HIGH(twi) SCL_TO(twi, 1)
+#define SCL_LOW(twi) SCL_TO(twi, 0)
+
+inline void huansic_I2C_start(HUAN_I2CM_TypeDef *twi) {
+	if (!SDA_STATE(twi)) {
+		SDA_HIGH(twi);
+		huansic_us_delay(5);
+	}
+	SCL_HIGH(twi);
+	huansic_us_delay(5);
+	SDA_LOW(twi);
+	huansic_us_delay(5);
+	SCL_LOW(twi);
+	huansic_us_delay(5);
+}
+
+inline void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi) {
+	// SCL should already be low
+	SDA_LOW(twi);
+	huansic_us_delay(5);
+	SCL_HIGH(twi);
+	huansic_us_delay(5);
+	SDA_HIGH(twi);
+	huansic_us_delay(5);
+}
+
+inline void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit) {
+	// SCL should already be low
+	SDA_TO(twi, bit);
+	huansic_us_delay(5);
+	SCL_HIGH(twi);
+	huansic_us_delay(5);
+	SCL_LOW(twi);
+	huansic_us_delay(5);
+}
+
+inline uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi) {
+	uint8_t result;
+	// SCL should already be low
+	SDA_HIGH(twi);		// release
+	huansic_us_delay(5);
+	SCL_HIGH(twi);
+	result = SDA_STATE(twi);		// read on rising edge
+	huansic_us_delay(5);
+	SCL_LOW(twi);
+	huansic_us_delay(5);
+	return result;
+}
+
+inline void huansic_I2C_Ack(HUAN_I2CM_TypeDef *twi) {
+	huansic_I2C_sendBit(twi, 0);
+}
+
+inline void huansic_I2C_Nack(HUAN_I2CM_TypeDef *twi) {
+	huansic_I2C_sendBit(twi, 1);
+}
+
+inline uint8_t huansic_I2C_getAck(HUAN_I2CM_TypeDef *twi) {
+	return !huansic_I2C_readBit(twi);
+}
+
+inline uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
+	float startus = huansic_us_get();
+	uint8_t result = 1;
+	SDA_HIGH(twi);		// release
+	huansic_us_delay(5);
+	SCL_HIGH(twi);
+	while(SDA_STATE(twi)) {		// wait until acknowledge or timeout
+		if(huansic_us_get() - startus > timeout_us) {
+			result = 0;
+			break;
+		}
+	}
+	huansic_us_delay(5);
+	SCL_LOW(twi);
+	huansic_us_delay(5);
+	return result;
+}
+
+inline void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data) {
+	uint8_t i;
+	for (i = 0xF0; i; i >>= 1) {
+		huansic_I2C_sendBit(twi, data & i ? 1 : 0);
+	}
+}
+
+inline uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi) {
+	uint8_t result = 0, i;
+	for (i = 0; i < 8; i++) {
+		result <<= 1;
+		result |= huansic_I2C_readBit(twi);
+	}
+	return result;
+}
+
+uint8_t huansic_I2C_write(HUAN_I2CM_TypeDef *twi, uint8_t deviceAddr, uint8_t registerAddr,
+		uint8_t *txBuffer, uint8_t len) {
+	// start transaction
+	huansic_I2C_start(twi);
+
+	// call slave
+	huansic_I2C_sendByte(twi, deviceAddr << 1);		// call slave and ask to write
+	if (!huansic_I2C_waitAck(twi, 10000))			// wait 10ms for response
+		return 0;
+
+	// send register address
+	huansic_I2C_sendByte(twi, registerAddr);
+	huansic_I2C_waitAck(twi, 10000);				// should acknowledge fast enough
+
+	// send data
+	uint8_t counter = 0;
+	while(len--) {
+		huansic_I2C_sendByte(twi, *txBuffer);
+		txBuffer++;
+		if(!huansic_I2C_waitAck(twi, 10000))
+		break;									// if it failed to send
+		counter++;
+	}
+
+	// release line
+	huansic_I2C_stop(twi);
+
+	// return number of bytes sent
+	return counter;
+}
+
+uint8_t huansic_I2C_read(HUAN_I2CM_TypeDef *twi, uint8_t deviceAddr, uint8_t registerAddr,
+		uint8_t *rxBuffer, uint8_t len) {
+	// start transaction
+	huansic_I2C_start(twi);
+
+	// call slave
+	huansic_I2C_sendByte(twi, deviceAddr << 1);		// call slave and ask to write
+	if (!huansic_I2C_waitAck(twi, 10000))			// wait 10ms for response
+		return 0;
+
+	// send register address
+	huansic_I2C_sendByte(twi, registerAddr);
+	huansic_I2C_waitAck(twi, 10000);				// should acknowledge fast enough
+
+	// check if any data is required to be read
+	if (len == 0) {
+		// release line
+		huansic_I2C_stop(twi);
+
+		return 0;
+	}
+
+	// restart transaction
+	huansic_I2C_start(twi);
+
+	// call slave
+	huansic_I2C_sendByte(twi, (deviceAddr << 1) | 0x01);		// call slave and ask to read
+	if (!huansic_I2C_waitAck(twi, 10000))			// wait 10ms for response
+		return 0;
+
+	// receive data
+	uint8_t counter = 0;
+	len--;
+	while(len--) {
+		*rxBuffer = huansic_I2C_readByte(twi);
+		rxBuffer++;
+		huansic_I2C_Ack(twi);						// acknowledge for more data
+		counter++;
+	}
+	*rxBuffer = huansic_I2C_readByte(twi);
+	huansic_I2C_Nack(twi);							// NACK for no more data
+	counter++;
+
+	// release line
+	huansic_I2C_stop(twi);
+
+	// return the number of bytes received
+	return counter;
+}
+
+#endif
+
