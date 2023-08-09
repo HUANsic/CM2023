@@ -127,6 +127,10 @@ void ui_cmd_stop(void){
 
 }
 
+void ui_cmd_pid_save(void){
+    
+}
+
 float Kp=0.0;
 float Ki=0.0;
 float Kd=0.0;

@@ -1,12 +1,9 @@
 # SPDX-License-Identifier: MIT
-# Copyright 2020-2021 NXP
-#
-# Makefile
-#
+# Copyright 2020-2023 NXP
 
 makefile_name := $(abspath $(lastword $(MAKEFILE_LIST)))
 makefile_path := $(strip $(patsubst %/,% , $(dir $(makefile_name))))
-libfile_path := $(makefile_path)/../lib/x86
+libfile_path := $(makefile_path)/../lib/native
 
 CC := gcc
 PRJ_DIR := $(makefile_path)/..

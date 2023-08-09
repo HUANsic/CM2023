@@ -30,6 +30,7 @@ LVGL_GUI/lvgl_app/guider_fonts
 LVGL_GUI/lvgl_port
  * =========AND implement the followings=========
  * void ui_cmd_go(void);
+ * void ui_cmd_pid_save(void);
 */
 
 //All you need to do.

@@ -38,6 +38,8 @@ typedef struct
 	lv_obj_t *screen_btn_next_label;
 	lv_obj_t *screen_sw_disarm;
 	lv_obj_t *screen_label_10;
+	lv_obj_t *screen_btn_save;
+	lv_obj_t *screen_btn_save_label;
 }lv_ui;
 
 void ui_init_style(lv_style_t * style);
