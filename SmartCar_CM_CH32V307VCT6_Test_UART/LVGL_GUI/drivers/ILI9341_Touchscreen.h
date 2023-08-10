@@ -16,7 +16,7 @@
 #define TP_MOSI_PIN GPIO_Pin_5
 
 #define TP_IRQ_PORT GPIOD
-#define TP_IRQ_PIN GPIO_Pin_5
+#define TP_IRQ_PIN GPIO_Pin_7
 
 #define CMD_RDY 0X90
 #define CMD_RDX 0XD0
