@@ -1158,7 +1158,18 @@ IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
 #define SCL_HIGH(twi) SCL_TO(twi, 1)
 #define SCL_LOW(twi) SCL_TO(twi, 0)
 
-inline void huansic_I2C_start(HUAN_I2CM_TypeDef *twi) {
+inline void huansic_I2C_start(HUAN_I2CM_TypeDef *twi);
+inline void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi);
+inline void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit);
+inline uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi);
+inline void huansic_I2C_Ack(HUAN_I2CM_TypeDef *twi);
+inline void huansic_I2C_Nack(HUAN_I2CM_TypeDef *twi);
+inline uint8_t huansic_I2C_getAck(HUAN_I2CM_TypeDef *twi);
+inline uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us);
+inline void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data);
+inline uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi);
+
+void huansic_I2C_start(HUAN_I2CM_TypeDef *twi) {
 	if (!SDA_STATE(twi)) {
 		SDA_HIGH(twi);
 		huansic_us_delay(5);
@@ -1171,7 +1182,7 @@ inline void huansic_I2C_start(HUAN_I2CM_TypeDef *twi) {
 	huansic_us_delay(5);
 }
 
-inline void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi) {
+void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi) {
 	// SCL should already be low
 	SDA_LOW(twi);
 	huansic_us_delay(5);
@@ -1181,7 +1192,7 @@ inline void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi) {
 	huansic_us_delay(5);
 }
 
-inline void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit) {
+void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit) {
 	// SCL should already be low
 	SDA_TO(twi, bit);
 	huansic_us_delay(5);
@@ -1191,7 +1202,7 @@ inline void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit) {
 	huansic_us_delay(5);
 }
 
-inline uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi) {
+uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi) {
 	uint8_t result;
 	// SCL should already be low
 	SDA_HIGH(twi);		// release
@@ -1204,19 +1215,19 @@ inline uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi) {
 	return result;
 }
 
-inline void huansic_I2C_Ack(HUAN_I2CM_TypeDef *twi) {
+void huansic_I2C_Ack(HUAN_I2CM_TypeDef *twi) {
 	huansic_I2C_sendBit(twi, 0);
 }
 
-inline void huansic_I2C_Nack(HUAN_I2CM_TypeDef *twi) {
+void huansic_I2C_Nack(HUAN_I2CM_TypeDef *twi) {
 	huansic_I2C_sendBit(twi, 1);
 }
 
-inline uint8_t huansic_I2C_getAck(HUAN_I2CM_TypeDef *twi) {
+uint8_t huansic_I2C_getAck(HUAN_I2CM_TypeDef *twi) {
 	return !huansic_I2C_readBit(twi);
 }
 
-inline uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
+uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
 	float startus = huansic_us_get();
 	uint8_t result = 1;
 	SDA_HIGH(twi);		// release
@@ -1234,14 +1245,14 @@ inline uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
 	return result;
 }
 
-inline void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data) {
+void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data) {
 	uint8_t i;
 	for (i = 0xF0; i; i >>= 1) {
 		huansic_I2C_sendBit(twi, data & i ? 1 : 0);
 	}
 }
 
-inline uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi) {
+uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi) {
 	uint8_t result = 0, i;
 	for (i = 0; i < 8; i++) {
 		result <<= 1;

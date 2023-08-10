@@ -8,6 +8,10 @@
 #include "huansic_FullFunction_lib.h"
 #include "lvgl_all_in.h"
 
+#define KP_ADDRESS	0x10
+#define KI_ADDRESS	0x20
+#define KD_ADDRESS	0x30
+
 void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
 void TIM3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Encoder timer
 void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
@@ -25,6 +29,7 @@ Encoder_TypeDef encoder;
 LED_TypeDef led1, led2, led3, led4;
 PID_TypeDef pid_controller;
 Screen_TypeDef screen;
+EEPROM_TypeDef eeprom;
 
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
@@ -761,24 +766,54 @@ void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
 	GPIO_Init(eeprom->twi->sda_port, &GPIO_InitStructure);
 }
 
-uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len){
+uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer,
+		uint8_t len) {
 	address &= 0x07FF;				// constrain it to 11 bits
 	uint8_t phys_address = eeprom->address & (0x78);	// clear highest and 3 lowest bits
 	phys_address |= address >> 8;		// OR with the highest 3 bits of address
 	return huansic_I2C_read(eeprom->twi, phys_address, address & 0x0FF, buffer, len);
 }
 
-uint8_t huansic_EEPROM_writeBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len){
+uint8_t huansic_EEPROM_writeBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer,
+		uint8_t len) {
 	address &= 0x07FF;				// constrain it to 11 bits
 	uint8_t phys_address = eeprom->address & (0x78);	// clear highest and 3 lowest bits
 	phys_address |= address >> 8;		// OR with the highest 3 bits of address
 	return huansic_I2C_write(eeprom->twi, phys_address, address & 0x0FF, buffer, len);
 }
 
+void huansic_EEPROM_savePID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller) {
+	union {
+		float f;
+		uint8_t u[4];
+	} tempunion;
+
+	tempunion.f = pid_controller->kp;
+	huansic_EEPROM_writeBytes(eeprom, KP_ADDRESS, &tempunion.u[0], 4);
+	tempunion.f = pid_controller->ki;
+	huansic_EEPROM_writeBytes(eeprom, KI_ADDRESS, &tempunion.u[0], 4);
+	tempunion.f = pid_controller->kd;
+	huansic_EEPROM_writeBytes(eeprom, KD_ADDRESS, &tempunion.u[0], 4);
+}
+
+void huansic_EEPROM_loadPID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller) {
+	union {
+		float f;
+		uint8_t u[4];
+	} tempunion;
+
+	huansic_EEPROM_readBytes(eeprom, KP_ADDRESS, &tempunion.u[0], 4);
+	pid_controller->kp = tempunion.f;
+	huansic_EEPROM_readBytes(eeprom, KI_ADDRESS, &tempunion.u[0], 4);
+	pid_controller->ki = tempunion.f;
+	huansic_EEPROM_readBytes(eeprom, KD_ADDRESS, &tempunion.u[0], 4);
+	pid_controller->kd = tempunion.f;
+}
+
 #else
 void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
-	GPIO_InitTypeDef GPIO_InitStructure = { 0 };
-	I2C_InitTypeDef I2C_InitTSturcture = { 0 };
+	GPIO_InitTypeDef GPIO_InitStructure = {0};
+	I2C_InitTypeDef I2C_InitTSturcture = {0};
 	uint32_t temp32_1 = 0, temp32_2 = 0;
 
 	temp32_1 |= huansic_getAPB1_fromI2C(eeprom->twi);
@@ -861,4 +896,8 @@ void ui_cmd_go(void) {
 
 void ui_cmd_stop(void) {
 	huansic_Motor_PID_SetGoal(&pid_controller, 0);
+}
+
+void ui_cmd_pid_save(void) {
+	huansic_EEPROM_savePID(&eeprom, &pid_controller);
 }
