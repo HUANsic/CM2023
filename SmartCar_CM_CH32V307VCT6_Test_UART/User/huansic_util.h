@@ -13,7 +13,7 @@
 #define HUAN_DefaultMapping 0xFFFFFFFF
 #define HUAN_NoMapping 0x00
 
-#define HUAN_US_TIMER TIM4
+#define HUAN_US_TIMER TIM10
 
 void huansic_us_Init(void);
 

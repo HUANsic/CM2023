@@ -260,10 +260,10 @@ void huansic_us_Init(void) {
 void huansic_us_delay(uint32_t duration) {
 	uint32_t startOVF = us_overflow, startUS = HUAN_US_TIMER->CNT;
 	while(((us_overflow - startOVF) << 16) + HUAN_US_TIMER->CNT - startUS < duration) {
-		__asm__("nop");
-		__asm__("nop");
-		__asm__("nop");
-		__asm__("nop");			// maybe chill a bit during waiting
+//		__asm__("nop");
+//		__asm__("nop");
+//		__asm__("nop");
+//		__asm__("nop");			// maybe chill a bit during waiting
 	}
 }
 
@@ -1152,7 +1152,7 @@ IRQn_Type huansic_getIRQ_fromTIM(TIM_TypeDef *tim) {
 #define SDA_STATE(twi) GPIO_ReadInputDataBit(twi->sda_port, twi->sda_pin)
 #define SCL_STATE(twi) GPIO_ReadInputDataBit(twi->scl_port, twi->scl_pin)
 #define SDA_TO(twi, x) GPIO_WriteBit(twi->sda_port, twi->sda_pin, x)
-#define SCL_TO(twi, x) GPIO_WriteBit(twi->scl_port, twi->sda_pin, x)
+#define SCL_TO(twi, x) GPIO_WriteBit(twi->scl_port, twi->scl_pin, x)
 #define SDA_HIGH(twi) SDA_TO(twi, 1)
 #define SDA_LOW(twi) SDA_TO(twi, 0)
 #define SCL_HIGH(twi) SCL_TO(twi, 1)
@@ -1166,52 +1166,52 @@ inline void huansic_I2C_Ack(HUAN_I2CM_TypeDef *twi);
 inline void huansic_I2C_Nack(HUAN_I2CM_TypeDef *twi);
 inline uint8_t huansic_I2C_getAck(HUAN_I2CM_TypeDef *twi);
 inline uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us);
-inline void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data);
-inline uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi);
+//inline void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data);
+//inline uint8_t huansic_I2C_readByte(HUAN_I2CM_TypeDef *twi);
 
 void huansic_I2C_start(HUAN_I2CM_TypeDef *twi) {
-	if (!SDA_STATE(twi)) {
+	if (SDA_STATE(twi) != 0) {
 		SDA_HIGH(twi);
-		huansic_us_delay(5);
+		huansic_us_delay(10);
 	}
 	SCL_HIGH(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SDA_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 }
 
 void huansic_I2C_stop(HUAN_I2CM_TypeDef *twi) {
 	// SCL should already be low
 	SDA_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_HIGH(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SDA_HIGH(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 }
 
 void huansic_I2C_sendBit(HUAN_I2CM_TypeDef *twi, uint8_t bit) {
 	// SCL should already be low
 	SDA_TO(twi, bit);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_HIGH(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 }
 
 uint8_t huansic_I2C_readBit(HUAN_I2CM_TypeDef *twi) {
 	uint8_t result;
 	// SCL should already be low
 	SDA_HIGH(twi);		// release
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_HIGH(twi);
 	result = SDA_STATE(twi);		// read on rising edge
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	return result;
 }
 
@@ -1231,7 +1231,7 @@ uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
 	float startus = huansic_us_get();
 	uint8_t result = 1;
 	SDA_HIGH(twi);		// release
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_HIGH(twi);
 	while(SDA_STATE(twi)) {		// wait until acknowledge or timeout
 		if(huansic_us_get() - startus > timeout_us) {
@@ -1239,16 +1239,16 @@ uint8_t huansic_I2C_waitAck(HUAN_I2CM_TypeDef *twi, float timeout_us) {
 			break;
 		}
 	}
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	SCL_LOW(twi);
-	huansic_us_delay(5);
+	huansic_us_delay(10);
 	return result;
 }
 
 void huansic_I2C_sendByte(HUAN_I2CM_TypeDef *twi, uint8_t data) {
 	uint8_t i;
-	for (i = 0xF0; i; i >>= 1) {
-		huansic_I2C_sendBit(twi, data & i ? 1 : 0);
+	for (i = 0x80; i; i >>= 1) {
+		huansic_I2C_sendBit(twi, (data & i) ? 1 : 0);
 	}
 }
 

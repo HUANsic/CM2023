@@ -29,6 +29,7 @@ Encoder_TypeDef encoder;
 LED_TypeDef led1, led2, led3, led4;
 PID_TypeDef pid_controller;
 Screen_TypeDef screen;
+HUAN_I2CM_TypeDef twi1;
 EEPROM_TypeDef eeprom;
 
 void huansic_Initialize(void) {
@@ -69,6 +70,13 @@ void huansic_Initialize(void) {
 	led4.pin = GPIO_Pin_10;
 	screen.int_port = GPIOD;
 	screen.int_pin = GPIO_Pin_5;
+	twi1.scl_port = GPIOB;
+	twi1.scl_pin = GPIO_Pin_6;
+	twi1.sda_port = GPIOB;
+	twi1.sda_pin = GPIO_Pin_7;
+	eeprom.twi = &twi1;
+	eeprom.address = 0x50;		// 0x1010AAAX >> 1
+	eeprom.device = AT24C16_16K;
 
 	// set up PID
 	pid_controller.timer = TIM9;
@@ -106,6 +114,10 @@ void huansic_Initialize(void) {
 		RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
 		GPIO_PinRemapConfig(encodermap, ENABLE);
 	}
+
+	// initialize EEPROM
+	huansic_EEPROM_init(&eeprom);
+//	huansic_EEPROM_loadPID(&eeprom, &pid_controller);
 
 	// TODO complete this part
 	huansic_Screen_Init(&screen);
@@ -757,13 +769,15 @@ void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
 	temp32_2 |= huansic_getAPB2_fromGPIO(eeprom->twi->scl_port);
 	RCC_APB2PeriphClockCmd(temp32_2, ENABLE);
 
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_OD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Pin = eeprom->twi->scl_pin;
 	GPIO_Init(eeprom->twi->scl_port, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin = eeprom->twi->sda_pin;
 	GPIO_Init(eeprom->twi->sda_port, &GPIO_InitStructure);
+
+	huansic_us_Init();
 }
 
 uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer,
@@ -787,13 +801,21 @@ void huansic_EEPROM_savePID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller)
 		float f;
 		uint8_t u[4];
 	} tempunion;
+	uint8_t temp[4] = { 0, 1, 2, 3 };
+	uint8_t temp8u;
 
 	tempunion.f = pid_controller->kp;
-	huansic_EEPROM_writeBytes(eeprom, KP_ADDRESS, &tempunion.u[0], 4);
+	temp8u = huansic_EEPROM_writeBytes(eeprom, KP_ADDRESS, temp, 4);
+	if (!temp8u)
+		while(1);
 	tempunion.f = pid_controller->ki;
-	huansic_EEPROM_writeBytes(eeprom, KI_ADDRESS, &tempunion.u[0], 4);
+	temp8u = huansic_EEPROM_writeBytes(eeprom, KI_ADDRESS, temp, 4);
+	if (!temp8u)
+		while(1);
 	tempunion.f = pid_controller->kd;
-	huansic_EEPROM_writeBytes(eeprom, KD_ADDRESS, &tempunion.u[0], 4);
+	temp8u = huansic_EEPROM_writeBytes(eeprom, KD_ADDRESS, temp, 4);
+	if (!temp8u)
+		while(1);
 }
 
 void huansic_EEPROM_loadPID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller) {

@@ -64,4 +64,8 @@ uint8_t huansic_EEPROM_writeBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint
 
 uint8_t huansic_EEPROM_readBytes(EEPROM_TypeDef *eeprom, uint16_t address, uint8_t *buffer, uint8_t len);
 
+void huansic_EEPROM_savePID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller);
+
+void huansic_EEPROM_loadPID(EEPROM_TypeDef *eeprom, PID_TypeDef *pid_controller);
+
 #endif /* USER_HUANSIC_FULLFUNCTION_LIB_H_ */
