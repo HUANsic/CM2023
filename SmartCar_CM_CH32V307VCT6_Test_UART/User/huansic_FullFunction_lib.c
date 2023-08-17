@@ -12,8 +12,9 @@
 #define KI_ADDRESS	0x20
 #define KD_ADDRESS	0x30
 
-void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
+void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// screen
 void TIM3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Encoder timer
+void TIM9_UP_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// PID timer
 void USART3_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Edgeboard
 //void EXTI9_5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));		// Touch screen
 
@@ -31,6 +32,9 @@ PID_TypeDef pid_controller;
 Screen_TypeDef screen;
 HUAN_I2CM_TypeDef twi1;
 EEPROM_TypeDef eeprom;
+
+uint8_t heartbeat;
+uint8_t started;
 
 void huansic_Initialize(void) {
 	uint32_t edgemap, motormap, servomap, encodermap;
@@ -77,6 +81,7 @@ void huansic_Initialize(void) {
 	eeprom.twi = &twi1;
 	eeprom.address = 0x50;		// 0x1010AAAX >> 1
 	eeprom.device = AT24C16_16K;
+	heartbeat = 0;
 
 	// set up PID
 	pid_controller.timer = TIM9;
@@ -287,6 +292,7 @@ void huansic_Edgeboard_IRQ(Edge_TypeDef *edgeboard, uint8_t msg) {
 	uint32_t tick = SysTick->CNT;
 	edgeboard->lastReceivedInterval = tick - edgeboard->lastReceived;
 	edgeboard->lastReceived = tick;
+	heartbeat = heartbeat > 50 ? 50 : heartbeat + 10;
 	if (msg & 0x80) {
 		edgeboard->highByte = msg & 0x7F;		// clear the highest byte
 	} else {
@@ -866,11 +872,12 @@ void huansic_EEPROM_init(EEPROM_TypeDef *eeprom) {
 }
 #endif
 
-void TIM9_UP_IRQHandler(void) {
-	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
-	huansic_Motor_PID_IRQ(&pid_controller);
-	// TODO split task
-	lv_timer_handler();
+void TIM2_IRQHandler(void) {
+	if (TIM_GetITStatus(TIM2, TIM_IT_Update)) {
+		if (!heartbeat)
+			lv_tick_inc(10);
+		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
+	}
 }
 
 void TIM3_IRQHandler(void) {
@@ -884,6 +891,15 @@ void TIM3_IRQHandler(void) {
 	}
 //	if(encoder.counter->)
 //	encoder.overflow
+}
+
+void TIM9_UP_IRQHandler(void) {
+	TIM_ClearFlag(TIM9, TIM_FLAG_Update);
+	heartbeat = (heartbeat == 0) ? 0 : (heartbeat - 1);
+	huansic_Motor_PID_IRQ(&pid_controller);
+	// TODO split task
+	if (!heartbeat)
+		lv_timer_handler();
 }
 
 void USART3_IRQHandler(void) {
@@ -921,5 +937,5 @@ void ui_cmd_stop(void) {
 }
 
 void ui_cmd_pid_save(void) {
-	huansic_EEPROM_savePID(&eeprom, &pid_controller);
+//	huansic_EEPROM_savePID(&eeprom, &pid_controller);
 }

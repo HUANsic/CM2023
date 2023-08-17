@@ -59,8 +59,8 @@ int main(void)
 	uint8_t j = 0;
 	while(1) {
 		huansic_LED_Set(&led1, (j = !j));
-		ui_display_speed(pid_controller.last5Speed / 1000);
-		ui_display_pid_goal(output);
+//		ui_display_speed(pid_controller.last5Speed / 1000);
+//		ui_display_pid_goal(output);
 //		void ui_display_step_counter(uint8_t* data);
 
 		Delay_Ms(300);

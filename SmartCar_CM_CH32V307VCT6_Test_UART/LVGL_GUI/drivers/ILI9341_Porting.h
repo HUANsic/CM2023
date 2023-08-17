@@ -11,7 +11,6 @@
 
 /* 已在CH32V307平台实现的代码  */
 void LVGL_TIM2_Init(void);
-void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void WCH_ILI9341_SPI_FullDuplex_Init(void);
 void WCH_ILI9341_GPIO_FullDuplex_Init(void);
 /* 上传速度 */

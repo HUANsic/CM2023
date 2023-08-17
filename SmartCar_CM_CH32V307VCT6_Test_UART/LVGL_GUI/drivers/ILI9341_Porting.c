@@ -32,12 +32,6 @@ void LVGL_TIM2_Init(void){
 
 uint16_t cnt=0;
 uint8_t led_flag=0;
-void TIM2_IRQHandler(void){
-    if(TIM_GetITStatus(TIM2, TIM_IT_Update)){
-        lv_tick_inc(10);
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);
-    }
-}
 
 void WCH_ILI9341_SPI_FullDuplex_Init(void){
     GPIO_InitTypeDef GPIO_InitStructure = {0};
